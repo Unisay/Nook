@@ -80,9 +80,10 @@ also deletes its subfolders and all the notes they contain, after asking.
 
 | Key | Action |
 |---|---|
-| `↑` / `↓` | move the selection (stays centred) |
-| `enter` / `→` | open the note, or enter the folder |
-| `←` / `esc` | go up to the parent folder |
+| `↑` / `↓` (or `k` / `j`) | move the selection (stays centred) |
+| `enter` | open the note, or enter the folder |
+| `→` / `l` | enter the folder |
+| `←` / `h` / `esc` | go up to the parent folder |
 | `c` / `ctrl+k` | new folder |
 | `n` / `ctrl+n` | new note (in the current folder) |
 | `r` / `ctrl+r` | rename |

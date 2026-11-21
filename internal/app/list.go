@@ -381,17 +381,19 @@ func (s listScreen) updateKey(keyMsg tea.KeyPressMsg) (listScreen, tea.Cmd) {
 	case "ctrl+q", "ctrl+c":
 		s.action = listQuit
 		return s, nil
-	case "up":
+	// The vim keys h j k l work as the arrows: l, like →, enters a folder
+	// but does not open a note, which only enter does.
+	case "up", "k":
 		if s.selected > 0 {
 			s.selected--
 		}
 		return s, nil
-	case "down":
+	case "down", "j":
 		if s.selected < s.entryCount()-1 {
 			s.selected++
 		}
 		return s, nil
-	case "right":
+	case "right", "l":
 		fallthrough
 	case "enter":
 		e, ok := s.currentEntry()
@@ -406,7 +408,7 @@ func (s listScreen) updateKey(keyMsg tea.KeyPressMsg) (listScreen, tea.Cmd) {
 			s.actionID = e.id
 		}
 		return s, nil
-	case "left":
+	case "left", "h":
 		fallthrough
 	case "esc":
 		return s.goUp(), nil

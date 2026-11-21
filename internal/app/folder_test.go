@@ -79,6 +79,67 @@ func TestFolderNavigation(t *testing.T) {
 	}
 }
 
+// TestListVimKeys checks that h j k l work in the list as the arrows: k and
+// j move the selection, l enters a folder but does not open a note, h goes
+// up. In an input popup the same letters are text.
+func TestListVimKeys(t *testing.T) {
+	st := newFolderTestStore(t)
+	folder, err := st.CreateFolder("projects", nil)
+	if err != nil {
+		t.Fatalf("creating folder: %v", err)
+	}
+	if _, err := st.CreateIn("inside", &folder.ID); err != nil {
+		t.Fatalf("creating note in the folder: %v", err)
+	}
+	if _, err := st.Create("outside"); err != nil {
+		t.Fatalf("creating note at the root: %v", err)
+	}
+	letter := func(r rune) tea.KeyPressMsg { return tea.KeyPressMsg{Code: r, Text: string(r)} }
+
+	s := newListScreen(st, 80, 24)
+	s.load()
+
+	// Entries at the root: the folder (0), then the note (1).
+	s, _ = s.updateKey(letter('k'))
+	if s.selected != 0 {
+		t.Fatalf("selected after k at the top = %d, want 0", s.selected)
+	}
+	s, _ = s.updateKey(letter('j'))
+	if s.selected != 1 {
+		t.Fatalf("selected after j = %d, want 1", s.selected)
+	}
+	s, _ = s.updateKey(letter('j'))
+	if s.selected != 1 {
+		t.Fatalf("selected after j at the bottom = %d, want 1", s.selected)
+	}
+
+	// l on the note does nothing, like →.
+	s, _ = s.updateKey(letter('l'))
+	if s.action == listOpen || s.folderID != nil {
+		t.Fatalf("l on a note: action = %v, folderID = %v; want no action", s.action, s.folderID)
+	}
+
+	// k back to the folder, l enters it, h goes back up.
+	s, _ = s.updateKey(letter('k'))
+	s, _ = s.updateKey(letter('l'))
+	if s.folderID == nil || *s.folderID != folder.ID {
+		t.Fatalf("folderID after l = %v, want %d", s.folderID, folder.ID)
+	}
+	s, _ = s.updateKey(letter('h'))
+	if s.folderID != nil || len(s.path) != 0 {
+		t.Fatalf("after h folderID = %v, path = %+v; want root", s.folderID, s.path)
+	}
+
+	// In the filter popup the letters are typed, not used to move.
+	s, _ = s.updateKey(letter('f'))
+	for _, r := range "hjkl" {
+		s, _ = s.updateKey(letter(r))
+	}
+	if s.mode != modeInputFilter || s.input.Value() != "hjkl" {
+		t.Fatalf("filter popup: mode = %v, value = %q; want modeInputFilter and \"hjkl\"", s.mode, s.input.Value())
+	}
+}
+
 // TestEnterOnNoteOpensEditor checks that enter on a note requests opening
 // of the editor, while the right arrow on a note does nothing.
 func TestEnterOnNoteOpensEditor(t *testing.T) {

@@ -44,9 +44,10 @@ const helpFooter = "←/→ section · ↑/↓ scroll · esc close"
 var helpPages = []helpPage{
 	{"List", []helpRow{
 		hh("Browse"),
-		hk("↑ / ↓", "move the selection"),
-		hk("enter / →", "open the note, or enter the folder"),
-		hk("← / esc", "go up one folder"),
+		hk("↑ / ↓ (k / j)", "move the selection"),
+		hk("enter", "open the note, or enter the folder"),
+		hk("→ / l", "enter the folder"),
+		hk("← / h / esc", "go up one folder"),
 		hk("f / ctrl+f", "filter by title"),
 		hh("Create and change"),
 		hk("n / ctrl+n", "new note in this folder"),
