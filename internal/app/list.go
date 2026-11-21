@@ -69,6 +69,12 @@ type listScreen struct {
 // newListScreen creates the list screen with an empty list.
 func newListScreen(st *store.Store, w, h int) listScreen {
 	ti := textinput.New()
+	// Use the terminal foreground for the prompt and reverse-video cursor.
+	styles := ti.Styles()
+	styles.Focused.Prompt = lipgloss.NewStyle()
+	styles.Blurred.Prompt = lipgloss.NewStyle()
+	styles.Cursor.Color = nil
+	ti.SetStyles(styles)
 	ti.Placeholder = "Title"
 	ti.CharLimit = 200
 	ti.SetWidth(40)

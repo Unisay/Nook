@@ -25,9 +25,7 @@ import (
 //     and "ctrl+k" (from the cursor to the end of the line).
 //   - text: all the runes of key.Text (space, IME, paste); a multi-line
 //     paste splits the line on '\n'.
-//   - history: "ctrl+y" redoes. Undo (ctrl+shift+z) arrives from some
-//     terminals as an escape sequence that the application decodes, and calls
-//     Undo directly.
+//   - history: ctrl+y redoes. The host handles ctrl+shift+z with Undo.
 //
 // With vim mode on, keys go to vimUpdate instead (see vim.go).
 func (e Editor) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

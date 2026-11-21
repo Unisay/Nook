@@ -1,11 +1,11 @@
 package app
 
 import (
-	"github.com/charmbracelet/x/ansi"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/Unisay/Nook/internal/store"
 )

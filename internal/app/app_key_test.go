@@ -1,14 +1,14 @@
 package app
 
 import (
-	"github.com/Unisay/Nook/theme"
-	"github.com/Unisay/Nook/themefile"
 	"image/color"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/editor"
+	"github.com/Unisay/Nook/theme"
+	"github.com/Unisay/Nook/themefile"
 )
 
 // TestHelpKeyToggle checks that f1 opens the help popup without making

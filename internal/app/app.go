@@ -2,14 +2,14 @@
 package app
 
 import (
-	"github.com/Unisay/Nook/theme"
-	"github.com/Unisay/Nook/themefile"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
 	"github.com/Unisay/Nook/internal/store"
+	"github.com/Unisay/Nook/theme"
+	"github.com/Unisay/Nook/themefile"
 )
 
 // appName is the name of the application, used in the window title when
@@ -71,7 +71,10 @@ func New(st *store.Store) Model {
 	return m
 }
 
+// WithAutoTheme enables asynchronous terminal background detection.
 func (m Model) WithAutoTheme(auto bool) Model { m.autoTheme = auto; return m }
+
+// Init requests the background colour when automatic selection is enabled.
 func (m Model) Init() tea.Cmd {
 	if m.autoTheme {
 		return tea.RequestBackgroundColor
@@ -105,7 +108,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.editor = m.editor.setSize(m.width, m.height)
 		return m, nil
 	case tea.KeyPressMsg:
-		switch msg.Keystroke() {
+		logKey(msg)
+		switch strings.ToLower(msg.Keystroke()) {
 		case "ctrl+shift+z":
 			return m.applyShortcut("undo")
 		case "ctrl+shift+c", "ctrl+shift+y":
@@ -124,8 +128,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // updateKey handles a key at application level. The third value says
 // whether the application must quit.
 func (m Model) updateKey(keyMsg tea.KeyPressMsg) (Model, tea.Cmd, bool) {
-	logKey(keyMsg)
-
 	key := keyMsg.String()
 
 	// Help is a popup over the current screen: while open it takes all the

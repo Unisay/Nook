@@ -38,7 +38,7 @@ func logKey(k tea.KeyPressMsg) {
 	}
 	defer f.Close()
 
-	fmt.Fprintf(f, "Type=%v Text=%q Mod=%v String=%q\n",
+	fmt.Fprintf(f, "Code=%v Text=%q Mod=%v String=%q\n",
 		k.Code, k.Text, k.Mod, k.String())
 }
 

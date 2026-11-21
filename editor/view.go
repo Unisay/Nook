@@ -1,9 +1,9 @@
 package editor
 
 import (
-	tea "charm.land/bubbletea/v2"
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
 	"github.com/Unisay/Nook/markdown"

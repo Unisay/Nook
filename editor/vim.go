@@ -243,6 +243,7 @@ func (e Editor) pasteText(text string) Editor {
 		return e
 	}
 	e.unfreeze()
+	e.vimMsg = ""
 	if e.vimCmdOn {
 		for _, r := range text {
 			if r >= ' ' {

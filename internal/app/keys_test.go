@@ -320,12 +320,16 @@ func TestCopyActionCopiesSelection(t *testing.T) {
 	m := Model{width: w, height: h, screen: screenEditor}
 	m.editor = editorScreen{ed: ed, mode: edEditing, width: w, height: h}
 
-	model, _ := m.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl | tea.ModShift})
-	if copied != "line" {
-		t.Fatalf("copied = %q, want %q", copied, "line")
-	}
-	if got := model.(Model).editor.toast; got != "copied" {
-		t.Errorf("toast = %q, want %q", got, "copied")
+	for _, code := range "cCyY" {
+		copied = ""
+		model, _ := m.Update(tea.KeyPressMsg{Code: code, Mod: tea.ModCtrl | tea.ModShift})
+		if copied != "line" {
+			t.Fatalf("copied = %q, want %q", copied, "line")
+		}
+		if got := model.(Model).editor.toast; got != "copied" {
+			t.Errorf("toast = %q, want %q", got, "copied")
+		}
+
 	}
 
 	copied = ""
@@ -358,8 +362,11 @@ func TestUndoAction(t *testing.T) {
 	if got := m.editor.ed.Lines()[0]; got != "ab" {
 		t.Fatalf("line = %q, want %q", got, "ab")
 	}
-	model, _ := m.Update(tea.KeyPressMsg{Code: 'z', Mod: tea.ModCtrl | tea.ModShift})
-	if got := model.(Model).editor.ed.Lines()[0]; got != "a" {
-		t.Fatalf("after undo line = %q, want %q", got, "a")
+	for _, code := range "zZ" {
+		model, _ := m.Update(tea.KeyPressMsg{Code: code, Mod: tea.ModCtrl | tea.ModShift})
+		if got := model.(Model).editor.ed.Lines()[0]; got != "a" {
+			t.Fatalf("after undo line = %q, want %q", got, "a")
+		}
 	}
+
 }

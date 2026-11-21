@@ -401,7 +401,7 @@ one that matches the current screen. Use `←`/`→` (or `tab`, or `1`–`6`) to
 ## Key diagnostics
 
 With `NOOK_DEBUG_KEYS=1` every `tea.KeyPressMsg` received is appended to
-`~/.nook/keys.log` (one line per key, with `Type`, `Text`, `Mod` and
+`~/.nook/keys.log` (one line per key, with `Code`, `Text`, `Mod` and
 `String`), useful to see what your terminal actually sends. Messages the
 application doesn't recognise are logged as well — for example unknown escape
 sequences (CSI), which bubbletea delivers as generic messages — in the format:

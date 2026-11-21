@@ -57,9 +57,8 @@ func init() {
 	Use(t)
 }
 
-// Resolve finds the theme called name: "dark", "light", "auto" (
-// dark until the host receives the terminal background), or a custom theme file; dir is the
-// configuration directory. See themefile.Load for the file lookup.
+// Resolve loads a built-in or custom theme from the configuration directory.
+// Auto starts dark until the host receives the terminal background colour.
 func Resolve(name, dir string) (themefile.Theme, error) {
 	if name == "auto" {
 		name = "dark"

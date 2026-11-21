@@ -27,8 +27,8 @@ func TestDebugKeyLog(t *testing.T) {
 		t.Fatalf("reading %s: %v", path, err)
 	}
 	content := string(data)
-	if !strings.Contains(content, "Type=") {
-		t.Fatalf("keys.log = %q, want it to contain %q", content, "Type=")
+	if !strings.Contains(content, "Code=") {
+		t.Fatalf("keys.log = %q, want it to contain %q", content, "Code=")
 	}
 	if !strings.Contains(content, "String=") {
 		t.Fatalf("keys.log = %q, want it to contain %q", content, "String=")
