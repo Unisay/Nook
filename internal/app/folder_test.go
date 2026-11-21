@@ -79,9 +79,9 @@ func TestFolderNavigation(t *testing.T) {
 	}
 }
 
-// TestListVimKeys checks that h j k l work in the list as the arrows: k and
-// j move the selection, l enters a folder but does not open a note, h goes
-// up. In an input popup the same letters are text.
+// TestListVimKeys checks the vim keys of the list: k and j move the
+// selection, l opens a note (like enter) or enters a folder, h goes up. In
+// an input popup the same letters are text.
 func TestListVimKeys(t *testing.T) {
 	st := newFolderTestStore(t)
 	folder, err := st.CreateFolder("projects", nil)
@@ -91,7 +91,8 @@ func TestListVimKeys(t *testing.T) {
 	if _, err := st.CreateIn("inside", &folder.ID); err != nil {
 		t.Fatalf("creating note in the folder: %v", err)
 	}
-	if _, err := st.Create("outside"); err != nil {
+	outside, err := st.Create("outside")
+	if err != nil {
 		t.Fatalf("creating note at the root: %v", err)
 	}
 	letter := func(r rune) tea.KeyPressMsg { return tea.KeyPressMsg{Code: r, Text: string(r)} }
@@ -113,11 +114,12 @@ func TestListVimKeys(t *testing.T) {
 		t.Fatalf("selected after j at the bottom = %d, want 1", s.selected)
 	}
 
-	// l on the note does nothing, like →.
+	// l on the note opens it, like enter.
 	s, _ = s.updateKey(letter('l'))
-	if s.action == listOpen || s.folderID != nil {
-		t.Fatalf("l on a note: action = %v, folderID = %v; want no action", s.action, s.folderID)
+	if s.action != listOpen || s.actionID != outside.ID {
+		t.Fatalf("l on a note: action = %v, id = %d; want listOpen on %d", s.action, s.actionID, outside.ID)
 	}
+	s.action = listNone
 
 	// k back to the folder, l enters it, h goes back up.
 	s, _ = s.updateKey(letter('k'))

@@ -381,8 +381,8 @@ func (s listScreen) updateKey(keyMsg tea.KeyPressMsg) (listScreen, tea.Cmd) {
 	case "ctrl+q", "ctrl+c":
 		s.action = listQuit
 		return s, nil
-	// The vim keys h j k l work as the arrows: l, like →, enters a folder
-	// but does not open a note, which only enter does.
+	// The vim keys h j k l work as the arrows, except that l also opens a
+	// note, like enter: → only enters folders.
 	case "up", "k":
 		if s.selected > 0 {
 			s.selected--
@@ -403,7 +403,7 @@ func (s listScreen) updateKey(keyMsg tea.KeyPressMsg) (listScreen, tea.Cmd) {
 		if e.kind == entryFolder {
 			return s.enterFolder(e.id), nil
 		}
-		if key == "enter" {
+		if key == "enter" || key == "l" {
 			s.action = listOpen
 			s.actionID = e.id
 		}

@@ -45,8 +45,8 @@ var helpPages = []helpPage{
 	{"List", []helpRow{
 		hh("Browse"),
 		hk("↑ / ↓ (k / j)", "move the selection"),
-		hk("enter", "open the note, or enter the folder"),
-		hk("→ / l", "enter the folder"),
+		hk("enter / l", "open the note, or enter the folder"),
+		hk("→", "enter the folder"),
 		hk("← / h / esc", "go up one folder"),
 		hk("f / ctrl+f", "filter by title"),
 		hh("Create and change"),
