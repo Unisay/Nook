@@ -4,6 +4,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/Unisay/Nook/internal/display"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/markdown"
@@ -101,7 +103,7 @@ func (e Editor) enterReading(fromCursor bool) Editor {
 	if fromCursor && len(e.lines) > 0 {
 		e.readLine = clampLine(e.cursorLine, len(e.lines))
 		rows, _ := e.renderedRows(e.readLine)
-		off := len(string([]rune(e.lines[e.readLine])[:min(e.cursorCol, runeLen(e.lines[e.readLine]))]))
+		off := len(string([]rune(display.Text(e.lines[e.readLine]))[:min(e.cursorCol, runeLen(e.lines[e.readLine]))]))
 		e.readSub = len(rows) - 1
 		for i, row := range rows {
 			if _, end := rowSpan(row); end > off {

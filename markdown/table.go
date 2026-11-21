@@ -3,6 +3,8 @@ package markdown
 import (
 	"strings"
 	"unicode/utf8"
+
+	"github.com/Unisay/Nook/internal/display"
 )
 
 // Align is the alignment of a table column.
@@ -44,6 +46,7 @@ func isRowLine(s string) bool {
 // splitRow splits a table row into its cells. The leading and trailing pipes
 // are optional and "\|" does not separate.
 func splitRow(raw string) []cellSpan {
+	raw = display.Text(raw)
 	var bars []int
 	for i := 0; i < len(raw); i++ {
 		if raw[i] == '\\' {

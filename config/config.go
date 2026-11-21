@@ -1,4 +1,5 @@
 // Package config reads Nook's configuration file, ~/.config/Nook/config.toml.
+// Environment overrides (NOOK_THEME, NOOK_VIM, NOOK_READING and NOOK_DIR) take precedence over the file.
 package config
 
 import (
@@ -48,9 +49,10 @@ func dir(getenv func(string) string, home func() (string, error)) (string, error
 // Load reads the configuration file (a missing file is fine: the defaults
 // apply) and then the environment variables NOOK_THEME, NOOK_VIM,
 // NOOK_READING and NOOK_DIR, which win over it. NOOK_CONFIG points at another file.
-func Load() (Config, error) { return load(os.Getenv, os.UserHomeDir) }
+func Load() (Config, error) { return LoadEnv(os.Getenv, os.UserHomeDir) }
 
-func load(getenv func(string) string, home func() (string, error)) (Config, error) {
+// LoadEnv loads settings using the supplied environment and home directory lookups.
+func LoadEnv(getenv func(string) string, home func() (string, error)) (Config, error) {
 	cfg := Default()
 	d, err := dir(getenv, home)
 	if err != nil {

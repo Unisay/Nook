@@ -30,6 +30,8 @@ With the `Makefile`: `make build`, `make run`, `make test`, `make vet`, `make fm
 
 ## Embed the Focus Line editor
 
+Read the user’s Nook settings with `config.Load()` from `github.com/Unisay/Nook/config`.
+
 Import `github.com/Unisay/Nook/editor` in a Bubble Tea v2 application.
 Create the model with `ed := editor.New(lines, width, height)`. In the parent
 model's update method, call `next, cmd := ed.Update(msg)`, store

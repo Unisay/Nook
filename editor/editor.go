@@ -3,6 +3,8 @@ package editor
 import (
 	"unicode"
 
+	"github.com/Unisay/Nook/internal/display"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/markdown"
@@ -133,7 +135,7 @@ func (e Editor) FocusRow() int { return e.focusRow() }
 // lines, and from the horizontal scroll: both are taken into account, so a
 // click on a character lands on that character.
 func (e Editor) FocusCellToCol(cell int) int {
-	raw := e.LineAt(e.focusLine())
+	raw := display.Text(e.LineAt(e.focusLine()))
 	cell -= markdown.PrefixWidth(raw)
 	if cell < 0 {
 		cell = 0

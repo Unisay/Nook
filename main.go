@@ -7,8 +7,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/Unisay/Nook/config"
 	"github.com/Unisay/Nook/internal/app"
-	"github.com/Unisay/Nook/internal/config"
 	"github.com/Unisay/Nook/internal/store"
 	"github.com/Unisay/Nook/theme"
 	"github.com/Unisay/Nook/themefile"

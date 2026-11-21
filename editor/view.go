@@ -3,6 +3,8 @@ package editor
 import (
 	"strings"
 
+	"github.com/Unisay/Nook/internal/display"
+
 	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
@@ -76,7 +78,7 @@ func (e Editor) renderRow(r int) string {
 // full strength, headings apart: they keep the dimmed palette, which is the
 // one with their highlight.
 func (e Editor) renderSegs(idx int, segs []markdown.Segment, inside bool) string {
-	raw := e.lines[idx]
+	raw := display.Text(e.lines[idx])
 
 	// A heading is highlighted: its background colours the text and a few
 	// spaces after it, and the inline styles inside it keep the background.
@@ -157,7 +159,7 @@ func truncate(s string, w int) string {
 
 // isFenceLine reports whether the line opens or closes a code block.
 func isFenceLine(s string) bool {
-	t := strings.TrimSpace(s)
+	t := strings.TrimSpace(display.Text(s))
 	return strings.HasPrefix(t, "```") || strings.HasPrefix(t, "~~~")
 }
 
@@ -180,7 +182,7 @@ func isInsideFence(lines []string, idx int) bool {
 // character, which stays in reverse.
 func (e Editor) renderFocusRow() string {
 	focus := e.focusLine()
-	raw := e.LineAt(focus)
+	raw := display.Text(e.LineAt(focus))
 
 	// The removed block prefix is compensated: spaces for the markers, but
 	// the vertical bar for quotes, so the bar stays continuous even

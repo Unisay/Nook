@@ -5,6 +5,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/Unisay/Nook/internal/display"
+
 	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
@@ -957,7 +959,7 @@ func (e *Editor) vimReplace(r rune, n int) {
 func (e Editor) vimFooter() string {
 	var out string
 	if e.vimCmdOn {
-		out = theme.Selected.Render(truncate(":"+e.vimCmd, e.width-1)) + theme.Rev.Render(" ")
+		out = theme.Selected.Render(truncate(":"+display.Text(e.vimCmd), e.width-1)) + theme.Rev.Render(" ")
 	} else {
 		head := truncate("-- "+vimModeNames[e.vimMode]+" --", e.width)
 		out = theme.BannerAcc.Render(head)
@@ -969,7 +971,7 @@ func (e Editor) vimFooter() string {
 			case e.vimPending != "" || e.vimCount > 0:
 				tail = vimCountText(e.vimPreCount) + e.vimPending + vimCountText(e.vimCount)
 			}
-			out += "  " + style.Render(truncate(tail, room))
+			out += "  " + style.Render(truncate(display.Text(tail), room))
 		}
 	}
 	if pad := e.width - ansi.StringWidth(out); pad > 0 {

@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/Unisay/Nook/internal/display"
 )
 
 // Style identifies the style of a Segment.
@@ -137,6 +139,7 @@ func fenceLabel(raw string) string {
 // (┌─ language) or bottom (└─) edge of the block, and a horizontal rule
 // becomes a line of "─"; the caller extends both to the width of the screen.
 func RenderLine(raw string, insideFence bool) []Segment {
+	raw = display.Text(raw)
 	if isFenceLine(raw) {
 		text := "└─"
 		if !insideFence {
