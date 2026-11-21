@@ -1,8 +1,9 @@
 package app
 
 import (
-	"github.com/Unisay/Nook/internal/store"
 	"testing"
+
+	"github.com/Unisay/Nook/internal/store"
 )
 
 func TestControlCharactersInAppViews(t *testing.T) {
