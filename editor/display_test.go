@@ -12,32 +12,7 @@ func TestStoredControlsRenderAsVisibleText(t *testing.T) {
 	doc := func(text string) []string {
 		return []string{"# " + text, text, "| name |", "|---|", "| " + text + " |"}
 	}
-	for _, width := range []int{7, 40} {
-		for line := range doc(raw) {
-			for _, reading := range []bool{false, true} {
-				makeEditor := func(text string) Editor {
-					e := New(doc(text), width, 15).SetSelection(0, 1, line, 5)
-					return e.WithReading(reading)
-				}
-				got, want := makeEditor(raw), makeEditor(visible)
-				if got.View().Content != want.View().Content {
-					t.Fatalf("line %d, width %d, reading %v: got %q, want %q", line, width, reading, got.View().Content, want.View().Content)
-				}
-				for y := 0; y < 15; y++ {
-					for x := 0; x < width; x++ {
-						l, c, ok := got.HitCell(y, x)
-						wl, wc, wok := want.HitCell(y, x)
-						if l != wl || c != wc || ok != wok {
-							t.Fatalf("hit (%d,%d): got (%d,%d,%v), want (%d,%d,%v)", x, y, l, c, ok, wl, wc, wok)
-						}
-					}
-				}
-				if !slices.Equal(got.Lines(), doc(raw)) {
-					t.Fatal("rendering changed stored text")
-				}
-			}
-		}
-	}
+	assertDisplayEquivalent(t, doc(raw), doc(visible))
 	for _, cmd := range []bool{false, true} {
 		footer := func(text string) string {
 			e := New(nil, 80, 10).WithVim()
@@ -64,5 +39,45 @@ func TestMarkdownTabsUseOneSpace(t *testing.T) {
 		if got, want := e.View().Content, New(plain, 40, 15).WithReading(true).View().Content; got != want {
 			t.Fatalf("%q: got %q, want %q", line, got, want)
 		}
+	}
+}
+
+func assertDisplayEquivalent(t *testing.T, rawDoc, visibleDoc []string) {
+	t.Helper()
+	for _, width := range []int{7, 40} {
+		for line := range rawDoc {
+			for _, reading := range []bool{false, true} {
+				makeEditor := func(lines []string) Editor {
+					e := New(lines, width, 15).SetSelection(0, 1, line, 5)
+					return e.WithReading(reading)
+				}
+				got, want := makeEditor(rawDoc), makeEditor(visibleDoc)
+				if got.View().Content != want.View().Content {
+					t.Fatalf("line %d, width %d, reading %v: got %q, want %q", line, width, reading, got.View().Content, want.View().Content)
+				}
+				for y := 0; y < 15; y++ {
+					for x := 0; x < width; x++ {
+						l, c, ok := got.HitCell(y, x)
+						wl, wc, wok := want.HitCell(y, x)
+						if l != wl || c != wc || ok != wok {
+							t.Fatalf("hit (%d,%d): got (%d,%d,%v), want (%d,%d,%v)", x, y, l, c, ok, wl, wc, wok)
+						}
+					}
+				}
+				if !slices.Equal(got.Lines(), rawDoc) {
+					t.Fatal("rendering changed stored text")
+				}
+			}
+		}
+	}
+}
+
+func TestTableControlsRenderAsVisibleText(t *testing.T) {
+	for _, tc := range []struct{ raw, visible string }{
+		{"\r``` | x |", "?``` | x |"},
+		{"# h\n| x |", "# h?| x |"},
+	} {
+		doc := func(row string) []string { return []string{"| name |", "|---|", row, "end"} }
+		assertDisplayEquivalent(t, doc(tc.raw), doc(tc.visible))
 	}
 }

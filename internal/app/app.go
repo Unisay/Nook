@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
+	"github.com/Unisay/Nook/internal/display"
 	"github.com/Unisay/Nook/internal/store"
 	"github.com/Unisay/Nook/theme"
 	"github.com/Unisay/Nook/themefile"
@@ -273,10 +274,11 @@ func isHelpKey(key string) bool {
 // name of the application.
 func (m Model) windowTitle() string {
 	if m.screen == screenEditor {
+		title := display.Text(m.editor.note.Title)
 		if m.editor.Dirty() {
-			return dirtyMark + m.editor.note.Title
+			return dirtyMark + title
 		}
-		return m.editor.note.Title
+		return title
 	}
 	return appName
 }

@@ -135,3 +135,14 @@ func TestInit(t *testing.T) {
 		t.Errorf("second Init: %v", err)
 	}
 }
+
+func TestExplicitConfigWithoutHome(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "alternate.toml")
+	if err := os.WriteFile(file, []byte("vim = true\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadEnv(env(map[string]string{"NOOK_CONFIG": file}), func() (string, error) { t.Fatal("unexpected home lookup"); return "", os.ErrNotExist })
+	if err != nil || !cfg.Vim || cfg.File != file || cfg.Dir != filepath.Dir(file) {
+		t.Fatalf("config = %+v, error = %v", cfg, err)
+	}
+}

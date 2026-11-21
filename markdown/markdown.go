@@ -211,6 +211,7 @@ func splitPrefix(raw string) (prefix *Segment, rest string, base Style, off int)
 // HeadingStyle reports whether raw is a heading line and, if so, the style of
 // its level.
 func HeadingStyle(raw string) (Style, bool) {
+	raw = display.Text(raw)
 	if m := headingRe.FindStringSubmatch(raw); m != nil {
 		return Style(int(StyleHeading1) + len(m[1]) - 1), true
 	}
@@ -233,6 +234,7 @@ func quoteBar(width int) string {
 
 // IsQuote reports whether raw is a quote line (it starts with ">").
 func IsQuote(raw string) bool {
+	raw = display.Text(raw)
 	return quoteRe.MatchString(raw)
 }
 
@@ -328,6 +330,7 @@ func byteOffsetOfRune(s string, idx int) int {
 // occupies. All recognised prefixes are ASCII, so the number of
 // runes equals the number of cells.
 func PrefixWidth(raw string) int {
+	raw = display.Text(raw)
 	if isRule(raw) || isFenceLine(raw) {
 		return 0
 	}

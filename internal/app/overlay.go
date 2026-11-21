@@ -6,6 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
+	"github.com/Unisay/Nook/internal/display"
 	"github.com/Unisay/Nook/theme"
 )
 
@@ -125,6 +126,7 @@ func toastLine(msg string, w int) string {
 	if strings.ContainsAny(msg, "\n\r") {
 		msg = strings.Join(strings.Fields(msg), " ")
 	}
+	msg = display.Text(msg)
 	text := truncatePlain(toastStyle(msg).Render(msg), maxPopupW(w))
 	tw := ansi.StringWidth(text)
 	if tw > cw {

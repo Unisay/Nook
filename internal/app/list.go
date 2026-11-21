@@ -9,6 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"github.com/Unisay/Nook/internal/display"
 	"github.com/Unisay/Nook/internal/store"
 	"github.com/Unisay/Nook/theme"
 )
@@ -693,7 +694,7 @@ func listContentH(ch, titleH int) int {
 func (s listScreen) listTitle(cw int) string {
 	parts := []string{"NOOK"}
 	for _, f := range s.path {
-		parts = append(parts, f.Name)
+		parts = append(parts, display.Text(f.Name))
 	}
 	return centerStyled(strings.Join(parts, " › "), cw, theme.BannerAcc)
 }
@@ -745,7 +746,7 @@ func cardText(text string, st lipgloss.Style, cardW int) string {
 	if cardW <= 0 {
 		return ""
 	}
-	plain := truncatePlain(text, cardW)
+	plain := truncatePlain(display.Text(text), cardW)
 	w := lipgloss.Width(plain)
 	left := (cardW - w) / 2
 	right := cardW - w - left

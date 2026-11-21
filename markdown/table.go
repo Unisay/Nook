@@ -40,6 +40,7 @@ func hasPipe(s string) bool { return strings.Contains(s, "|") }
 // isRowLine reports whether a line can belong to a table: it has a pipe and
 // is not a fence, a heading or a quote.
 func isRowLine(s string) bool {
+	s = display.Text(s)
 	return hasPipe(s) && !isFenceLine(s) && !headingRe.MatchString(s) && !quoteRe.MatchString(s)
 }
 

@@ -54,15 +54,16 @@ func Load() (Config, error) { return LoadEnv(os.Getenv, os.UserHomeDir) }
 // LoadEnv loads settings using the supplied environment and home directory lookups.
 func LoadEnv(getenv func(string) string, home func() (string, error)) (Config, error) {
 	cfg := Default()
-	d, err := dir(getenv, home)
-	if err != nil {
-		return cfg, err
-	}
-	cfg.Dir = d
-	cfg.File = filepath.Join(d, "config.toml")
 	if p := getenv("NOOK_CONFIG"); p != "" {
 		cfg.File = p
 		cfg.Dir = filepath.Dir(p)
+	} else {
+		d, err := dir(getenv, home)
+		if err != nil {
+			return cfg, err
+		}
+		cfg.Dir = d
+		cfg.File = filepath.Join(d, "config.toml")
 	}
 
 	b, err := os.ReadFile(cfg.File)
