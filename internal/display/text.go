@@ -21,9 +21,12 @@ func Text(s string) string {
 			continue
 		}
 		b.WriteString(s[start:i])
-		if size == 2 {
+		switch {
+		case r == '\t':
+			b.WriteByte(' ')
+		case size == 2:
 			b.WriteString("¡")
-		} else {
+		default:
 			b.WriteByte('?')
 		}
 		start = i + size

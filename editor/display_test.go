@@ -2,12 +2,13 @@ package editor
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
 func TestStoredControlsRenderAsVisibleText(t *testing.T) {
 	const raw = "a\x00\x07\x1b\r\t\n\x7f\u0085\u009f\xffz"
-	const visible = "a???????¡¡?z"
+	const visible = "a???? ??¡¡?z"
 	doc := func(text string) []string {
 		return []string{"# " + text, text, "| name |", "|---|", "| " + text + " |"}
 	}
@@ -45,6 +46,23 @@ func TestStoredControlsRenderAsVisibleText(t *testing.T) {
 		}
 		if footer(raw) != footer(visible) {
 			t.Fatalf("unsafe footer, command mode %v: %q", cmd, footer(raw))
+		}
+	}
+}
+
+func TestMarkdownTabsUseOneSpace(t *testing.T) {
+	for _, line := range []string{"#\tTitle", ">\tquote", "\t- nested", "\tcode"} {
+		doc := []string{line, "end"}
+		if line == "\tcode" {
+			doc = []string{"```", line, "```", "end"}
+		}
+		plain := slices.Clone(doc)
+		for i, s := range plain {
+			plain[i] = strings.ReplaceAll(s, "\t", " ")
+		}
+		e := New(doc, 40, 15).WithReading(true)
+		if got, want := e.View().Content, New(plain, 40, 15).WithReading(true).View().Content; got != want {
+			t.Fatalf("%q: got %q, want %q", line, got, want)
 		}
 	}
 }
