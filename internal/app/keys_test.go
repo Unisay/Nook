@@ -329,7 +329,6 @@ func TestCopyActionCopiesSelection(t *testing.T) {
 		if got := model.(Model).editor.toast; got != "copied" {
 			t.Errorf("toast = %q, want %q", got, "copied")
 		}
-
 	}
 
 	copied = ""
@@ -368,5 +367,4 @@ func TestUndoAction(t *testing.T) {
 			t.Fatalf("after undo line = %q, want %q", got, "a")
 		}
 	}
-
 }

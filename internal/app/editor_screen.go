@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/Unisay/Nook/markdown"
 	"os"
 	"strings"
 	"time"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/Unisay/Nook/editor"
 	"github.com/Unisay/Nook/internal/store"
+	"github.com/Unisay/Nook/markdown"
 	"github.com/Unisay/Nook/theme"
 )
 
