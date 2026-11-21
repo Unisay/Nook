@@ -206,7 +206,7 @@ func (m Model) updateHelpKey(key string) Model {
 		m.helpScroll++
 	case "up", "k":
 		m.helpScroll--
-	case "pgdown", " ":
+	case "pgdown", "space":
 		m.helpScroll += body
 	case "pgup":
 		m.helpScroll -= body

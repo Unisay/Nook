@@ -4,10 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
-	lipgloss "github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
-	"github.com/muesli/termenv"
 
 	"github.com/Unisay/Nook/theme"
 )
@@ -69,13 +67,12 @@ func TestSelectedText(t *testing.T) {
 // Focus Line and the rendered lines contain the selection style when the
 // selection crosses them.
 func TestSelectionRendered(t *testing.T) {
-	lipgloss.SetColorProfile(termenv.TrueColor)
 
 	lines := []string{"plain text", "**bold** here", "last line"}
 	e := New(lines, 40, 9)
 
 	// Without a selection the view does not contain the selection style.
-	plain := e.View()
+	plain := e.View().Content
 	if strings.Contains(plain, theme.Selection.Render("t")) {
 		t.Fatal("the view without a selection already contains the selection style")
 	}
@@ -83,7 +80,7 @@ func TestSelectionRendered(t *testing.T) {
 	// Selection from line 0 to line 2: the cursor is on line 2, so lines
 	// 0 and 1 are rendered lines (not focus) and must show the highlighting.
 	e = e.SetSelection(0, 0, 2, 5)
-	view := e.View()
+	view := e.View().Content
 
 	// The text stays the same on screen, but with the highlighting.
 	stripped := ansi.Strip(view)
@@ -106,9 +103,9 @@ func TestDragSelectionWithKeys(t *testing.T) {
 	e := New([]string{"abcdef"}, 40, 5)
 	e = e.SetCursor(0, 0)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyShiftRight})
-	e = press(e, tea.KeyMsg{Type: tea.KeyShiftRight})
-	e = press(e, tea.KeyMsg{Type: tea.KeyShiftRight})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModShift})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModShift})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModShift})
 
 	got, ok := e.SelectedText()
 	if !ok || got != "abc" {
@@ -139,7 +136,7 @@ func TestSelectionReplacedByTyping(t *testing.T) {
 	e := New([]string{"good world"}, 40, 5)
 	e = e.SetSelection(0, 0, 0, 4)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+	e = press(e, tea.KeyPressMsg{Text: "x"})
 	if got := e.Lines()[0]; got != "x world" {
 		t.Errorf("line after the replacement = %q, want %q", got, "x world")
 	}

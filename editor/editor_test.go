@@ -4,10 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
-	lipgloss "github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
-	"github.com/muesli/termenv"
 
 	"github.com/Unisay/Nook/markdown"
 	"github.com/Unisay/Nook/theme"
@@ -210,7 +208,7 @@ func TestIsInsideFence(t *testing.T) {
 func TestRenderFocusRowPad(t *testing.T) {
 	e := Editor{lines: []string{"# hello"}, cursorLine: 0, cursorCol: 0, width: 10, height: 1}
 
-	got := ansi.Strip(e.View())
+	got := ansi.Strip(e.View().Content)
 	if len(got) < len("  # hello") || got[:len("  # hello")] != "  # hello" {
 		t.Fatalf("View() = %q, want prefix %q", got, "  # hello")
 	}
@@ -221,7 +219,7 @@ func TestRenderFocusRowPad(t *testing.T) {
 func TestSpaceInserts(t *testing.T) {
 	e := New([]string{"a"}, 10, 5)
 
-	m, _ := e.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
+	m, _ := e.Update(tea.KeyPressMsg{Text: " "})
 	e2, ok := m.(Editor)
 	if !ok {
 		t.Fatalf("Update returned %T, want Editor", m)
@@ -237,7 +235,7 @@ func TestSpaceInserts(t *testing.T) {
 func TestArrowMoves(t *testing.T) {
 	e := New([]string{"a", "b"}, 10, 5)
 
-	m, _ := e.Update(tea.KeyMsg{Type: tea.KeyDown})
+	m, _ := e.Update(tea.KeyPressMsg{Code: tea.KeyDown})
 	e2, ok := m.(Editor)
 	if !ok {
 		t.Fatalf("Update returned %T, want Editor", m)
@@ -252,7 +250,6 @@ func TestArrowMoves(t *testing.T) {
 // on the rendered lines and on the Focus Line, so the bar stays continuous over the whole
 // quote block.
 func TestQuoteBarInView(t *testing.T) {
-	lipgloss.SetColorProfile(termenv.TrueColor)
 
 	lines := []string{
 		"plain text",
@@ -264,7 +261,7 @@ func TestQuoteBarInView(t *testing.T) {
 	e := New(lines, 50, 11)
 	e = e.SetCursor(2, 0) // Focus Line on the second quote line
 
-	view := ansi.Strip(e.View())
+	view := ansi.Strip(e.View().Content)
 	rows := strings.Split(view, "\n")
 
 	var withBar, quoted int
@@ -332,7 +329,7 @@ func TestDragSelectionKeepsFocusLine(t *testing.T) {
 		t.Fatalf("SelectedText = %q, %v; want %q", text, ok, "cc\nddd\nee")
 	}
 
-	next, _ := e.Update(tea.KeyMsg{Type: tea.KeyLeft})
+	next, _ := e.Update(tea.KeyPressMsg{Code: tea.KeyLeft})
 	e = next.(Editor)
 	if got, ok := e.LineAtRow(e.FocusRow()); !ok || got != 4 {
 		t.Fatalf("after a key the Focus Line shows line %d (ok=%v), want 4 (the cursor)", got, ok)
@@ -344,7 +341,7 @@ func TestDragSelectionKeepsFocusLine(t *testing.T) {
 func TestUndoRedo(t *testing.T) {
 	typ := func(e Editor, s string) Editor {
 		for _, r := range s {
-			e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+			e = press(e, tea.KeyPressMsg{Code: r, Text: string(r)})
 		}
 		return e
 	}
@@ -357,13 +354,13 @@ func TestUndoRedo(t *testing.T) {
 	if got := e.Lines()[0]; got != "" {
 		t.Fatalf("after undo line = %q, want empty (typing is one step)", got)
 	}
-	e = press(e, tea.KeyMsg{Type: tea.KeyCtrlY})
+	e = press(e, tea.KeyPressMsg{Code: 'y', Mod: tea.ModCtrl})
 	if got := e.Lines()[0]; got != "abc" {
 		t.Fatalf("after redo line = %q, want %q", got, "abc")
 	}
 
 	// A movement ends the run: "x" inserted after moving is its own step.
-	e = press(e, tea.KeyMsg{Type: tea.KeyLeft})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyLeft})
 	e = typ(e, "x")
 	if got := e.Lines()[0]; got != "abxc" {
 		t.Fatalf("line = %q, want %q", got, "abxc")

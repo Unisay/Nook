@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func dailyModel(t *testing.T, day string) (Model, string) {
@@ -24,22 +24,22 @@ func dailyModel(t *testing.T, day string) (Model, string) {
 	return m, st.Root()
 }
 
-func press(m Model, k tea.KeyMsg) Model {
+func press(m Model, k tea.KeyPressMsg) Model {
 	out, _ := m.Update(k)
 	return out.(Model)
 }
 
 func TestDailyDraftIsWrittenOnlyOnSave(t *testing.T) {
 	m, root := dailyModel(t, "2026-11-10")
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlD})
+	m = press(m, tea.KeyPressMsg{Code: 'd', Mod: tea.ModCtrl})
 	if m.screen != screenEditor || !m.editor.draft {
 		t.Fatalf("screen %v draft %v", m.screen, m.editor.draft)
 	}
 	if _, err := os.Stat(filepath.Join(root, "Daily")); !os.IsNotExist(err) {
 		t.Fatalf("Daily created before saving (err = %v)", err)
 	}
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("hello")})
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlS})
+	m = press(m, tea.KeyPressMsg{Text: "hello"})
+	m = press(m, tea.KeyPressMsg{Code: 's', Mod: tea.ModCtrl})
 	b, err := os.ReadFile(filepath.Join(root, "Daily", "2026-11-10.md"))
 	if err != nil {
 		t.Fatalf("file not written: %v", err)
@@ -51,8 +51,8 @@ func TestDailyDraftIsWrittenOnlyOnSave(t *testing.T) {
 		t.Fatal("still a draft after saving")
 	}
 	// A second save updates the same file.
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("!")})
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlS})
+	m = press(m, tea.KeyPressMsg{Text: "!"})
+	m = press(m, tea.KeyPressMsg{Code: 's', Mod: tea.ModCtrl})
 	b, _ = os.ReadFile(filepath.Join(root, "Daily", "2026-11-10.md"))
 	if string(b) != "# 2026-11-10\n\nhello!" {
 		t.Fatalf("body after second save %q", b)
@@ -61,11 +61,11 @@ func TestDailyDraftIsWrittenOnlyOnSave(t *testing.T) {
 
 func TestDailyDiscardCreatesNothing(t *testing.T) {
 	m, root := dailyModel(t, "2026-11-10")
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlD})
-	m = press(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlQ})
-	m = press(m, tea.KeyMsg{Type: tea.KeyRight}) // Discard
-	m = press(m, tea.KeyMsg{Type: tea.KeyEnter})
+	m = press(m, tea.KeyPressMsg{Code: 'd', Mod: tea.ModCtrl})
+	m = press(m, tea.KeyPressMsg{Text: "x"})
+	m = press(m, tea.KeyPressMsg{Code: 'q', Mod: tea.ModCtrl})
+	m = press(m, tea.KeyPressMsg{Code: tea.KeyRight}) // Discard
+	m = press(m, tea.KeyPressMsg{Code: tea.KeyEnter})
 	if m.screen != screenList {
 		t.Fatalf("screen %v, want the list", m.screen)
 	}
@@ -82,7 +82,7 @@ func TestDailyOpensExistingNote(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "Daily", "2026-11-10.md"), []byte("old"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlD})
+	m = press(m, tea.KeyPressMsg{Code: 'd', Mod: tea.ModCtrl})
 	if m.screen != screenEditor || m.editor.draft {
 		t.Fatalf("screen %v draft %v", m.screen, m.editor.draft)
 	}
@@ -93,14 +93,14 @@ func TestDailyOpensExistingNote(t *testing.T) {
 
 func TestDailyNeverOverwrites(t *testing.T) {
 	m, root := dailyModel(t, "2026-11-10")
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlD})
+	m = press(m, tea.KeyPressMsg{Code: 'd', Mod: tea.ModCtrl})
 	if err := os.MkdirAll(filepath.Join(root, "Daily"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(root, "Daily", "2026-11-10.md"), []byte("other"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	m = press(m, tea.KeyMsg{Type: tea.KeyCtrlS})
+	m = press(m, tea.KeyPressMsg{Code: 's', Mod: tea.ModCtrl})
 	b, _ := os.ReadFile(filepath.Join(root, "Daily", "2026-11-10.md"))
 	if string(b) != "other" {
 		t.Fatalf("overwritten: %q", b)

@@ -3,7 +3,7 @@ package editor
 import (
 	"unicode"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/markdown"
 )

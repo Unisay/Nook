@@ -1,6 +1,7 @@
 package editor
 
 import (
+	tea "charm.land/bubbletea/v2"
 	"strings"
 
 	ansi "github.com/charmbracelet/x/ansi"
@@ -10,9 +11,9 @@ import (
 )
 
 // View draws the editor: one row for each screen row, separated by "\n".
-func (e Editor) View() string {
+func (e Editor) View() tea.View {
 	if e.reading {
-		return e.viewReading()
+		return tea.NewView(e.viewReading())
 	}
 	out := ""
 	for r := 0; r < e.height; r++ {
@@ -21,7 +22,7 @@ func (e Editor) View() string {
 		}
 		out += e.renderRow(r)
 	}
-	return out
+	return tea.NewView(out)
 }
 
 // edFooterHint is the footer text: the essential keys.

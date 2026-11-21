@@ -3,7 +3,7 @@ package app
 import (
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
 	"github.com/Unisay/Nook/theme"

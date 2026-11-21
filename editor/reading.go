@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/markdown"
 )
@@ -188,7 +188,7 @@ func (e Editor) readBottom() Editor {
 
 // readingUpdate handles a key in reading mode: it scrolls, or leaves the mode,
 // the note or Nook; everything else is ignored, so the text cannot change.
-func (e Editor) readingUpdate(key tea.KeyMsg) Editor {
+func (e Editor) readingUpdate(key tea.KeyPressMsg) Editor {
 	page := max(e.height-1, 1)
 	switch key.String() {
 	case "ctrl+p":
@@ -208,7 +208,7 @@ func (e Editor) readingUpdate(key tea.KeyMsg) Editor {
 		return e.readMove(1)
 	case "pgup", "ctrl+b":
 		return e.readMove(-page)
-	case "pgdown", "ctrl+f", " ":
+	case "pgdown", "ctrl+f", "space":
 		return e.readMove(page)
 	case "ctrl+u":
 		return e.readMove(-max(page/2, 1))

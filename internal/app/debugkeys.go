@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // debugKeysEnv is the environment variable that enables key diagnostics.
@@ -17,7 +17,7 @@ const debugKeysEnv = "NOOK_DEBUG_KEYS"
 // If diagnostics are off it does nothing and creates no file.
 // I/O errors are ignored: diagnostics must never block
 // the editor.
-func logKey(k tea.KeyMsg) {
+func logKey(k tea.KeyPressMsg) {
 	if os.Getenv(debugKeysEnv) != "1" {
 		return
 	}
@@ -38,8 +38,8 @@ func logKey(k tea.KeyMsg) {
 	}
 	defer f.Close()
 
-	fmt.Fprintf(f, "Type=%v Runes=%q Alt=%v Paste=%v String=%q\n",
-		k.Type, k.Runes, k.Alt, k.Paste, k.String())
+	fmt.Fprintf(f, "Type=%v Text=%q Mod=%v String=%q\n",
+		k.Code, k.Text, k.Mod, k.String())
 }
 
 // knownMsg reports whether msg is one of the messages the application already knows and
@@ -48,7 +48,7 @@ func logKey(k tea.KeyMsg) {
 // bubbletea delivers raw) is an unrecognised message.
 func knownMsg(msg tea.Msg) bool {
 	switch msg.(type) {
-	case tea.WindowSizeMsg, tea.KeyMsg, tea.MouseMsg, listToastClear, editorToastClear:
+	case tea.WindowSizeMsg, tea.KeyPressMsg, tea.MouseMsg, tea.PasteMsg, tea.BackgroundColorMsg, listToastClear, editorToastClear:
 		return true
 	}
 	return false

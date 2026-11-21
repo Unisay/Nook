@@ -1,7 +1,7 @@
 package editor
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // --- Key dispatch ---
@@ -18,12 +18,12 @@ import (
 //   - movement: arrows, "home", "end", "ctrl+up", "ctrl+down", "ctrl+home",
 //     "ctrl+end", "pgup", "pgdown"; "ctrl+left"/"alt+left" go to the start
 //     of the current or previous word, "ctrl+right"/"alt+right" to the end
-//     of the current or next word; "shift+ctrl+left" and
-//     "shift+ctrl+right" make the same movements extending the selection.
+//     of the current or next word; "ctrl+shift+left" and
+//     "ctrl+shift+right" make the same movements extending the selection.
 //   - deletion: "backspace", "delete", "alt+backspace" (up to the start
 //     of the current or previous word), "ctrl+u" (from the cursor to the start of the line)
 //     and "ctrl+k" (from the cursor to the end of the line).
-//   - text: all the runes of key.Runes (space, IME, paste); a multi-line
+//   - text: all the runes of key.Text (space, IME, paste); a multi-line
 //     paste splits the line on '\n'.
 //   - history: "ctrl+y" redoes. Undo (ctrl+shift+z) arrives from some
 //     terminals as an escape sequence that the application decodes, and calls
@@ -31,7 +31,10 @@ import (
 //
 // With vim mode on, keys go to vimUpdate instead (see vim.go).
 func (e Editor) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	key, ok := msg.(tea.KeyMsg)
+	if p, ok := msg.(tea.PasteMsg); ok {
+		return e.pasteText(p.Content), nil
+	}
+	key, ok := msg.(tea.KeyPressMsg)
 	if !ok {
 		return e, nil
 	}
@@ -58,7 +61,7 @@ func (e Editor) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // update handles a key; Update wraps it to keep the undo history.
-func (e Editor) update(key tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (e Editor) update(key tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	s := key.String()
 
 	// Any key ends a frozen view (see DragSelection).
@@ -124,9 +127,9 @@ func (e Editor) update(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		e = withSelection(e, Editor.moveHome)
 	case "shift+end":
 		e = withSelection(e, Editor.moveEnd)
-	case "shift+ctrl+left":
+	case "ctrl+shift+left":
 		e = withSelection(e, Editor.moveWordLeft)
-	case "shift+ctrl+right":
+	case "ctrl+shift+right":
 		e = withSelection(e, Editor.moveWordRight)
 
 	case "backspace":
@@ -143,23 +146,19 @@ func (e Editor) update(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		e.newline()
 
 	default:
-		e = e.insertKeyText(key)
+		if key.Mod&tea.ModAlt == 0 {
+			e = e.insertText(key.Text)
+		}
 	}
 
 	return e, nil
 }
 
-// insertKeyText inserts the text carried by the key: ALL the runes of
-// key.Runes, without requiring key.Type == tea.KeyRunes (space arrives as
-// tea.KeySpace with Runes [" "], IME text and paste as KeyRunes with several
-// runes). Only control runes are skipped; a '\n' splits the line.
-func (e Editor) insertKeyText(key tea.KeyMsg) Editor {
-	if key.Alt || len(key.Runes) == 0 {
-		return e
-	}
-	for _, r := range key.Runes {
+// insertText inserts printable text and splits lines at newlines.
+func (e Editor) insertText(text string) Editor {
+	for _, r := range text {
 		// Windows paste "\r\n": the line break is handled by the '\n' that follows.
-		if key.Paste && r == '\r' {
+		if r == '\r' {
 			continue
 		}
 		// A multi-line paste splits the line instead of inserting '\n'.

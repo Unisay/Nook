@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/internal/app"
 	"github.com/Unisay/Nook/internal/config"
@@ -60,7 +60,7 @@ func main() {
 		fatal(err)
 	}
 	defer st.Close()
-	p := tea.NewProgram(app.New(st), tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(app.New(st).WithAutoTheme(cfg.Theme == "auto"))
 	if _, err := p.Run(); err != nil {
 		fatal(err)
 	}

@@ -1,6 +1,6 @@
 package editor
 
-import tea "github.com/charmbracelet/bubbletea"
+import tea "charm.land/bubbletea/v2"
 
 // maxUndo is how many changes the history keeps.
 const maxUndo = 200
@@ -44,12 +44,11 @@ func sameLines(a, b []string) bool {
 
 // editKind groups the keys whose effects are undone together: a run of typed
 // characters, or a run of deletions, is one step of the history.
-func editKind(key tea.KeyMsg) string {
-	switch key.Type {
-	case tea.KeyRunes, tea.KeySpace:
-		if !key.Alt {
-			return "type"
-		}
+func editKind(key tea.KeyPressMsg) string {
+	if key.Text != "" && key.Mod&tea.ModAlt == 0 {
+		return "type"
+	}
+	switch key.Code {
 	case tea.KeyBackspace, tea.KeyDelete:
 		return "delete"
 	}

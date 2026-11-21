@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/editor"
 	"github.com/Unisay/Nook/internal/store"
@@ -180,8 +180,14 @@ func (s editorScreen) Update(msg tea.Msg) (editorScreen, tea.Cmd) {
 		s.toast = ""
 		s.toastUntil = time.Time{}
 		return s, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.edUpdateKey(msg)
+	case tea.PasteMsg:
+		if s.mode == edEditing {
+			model, cmd := s.ed.Update(msg)
+			s.ed = model.(editor.Editor)
+			return s, cmd
+		}
 	case tea.MouseMsg:
 		return s.edUpdateMouse(msg)
 	}
@@ -189,7 +195,7 @@ func (s editorScreen) Update(msg tea.Msg) (editorScreen, tea.Cmd) {
 }
 
 // edUpdateKey handles a key according to the shared scheme.
-func (s editorScreen) edUpdateKey(keyMsg tea.KeyMsg) (editorScreen, tea.Cmd) {
+func (s editorScreen) edUpdateKey(keyMsg tea.KeyPressMsg) (editorScreen, tea.Cmd) {
 	key := keyMsg.String()
 
 	if s.mode == edFormatPalette {
@@ -335,7 +341,8 @@ const edWheelStep = 1
 // word under the cursor and the triple click the whole line. From the second click
 // on, the cursor is no longer brought back to the cell: the first click has
 // already placed it there, while the view may have scrolled.
-func (s editorScreen) edUpdateMouse(m tea.MouseMsg) (editorScreen, tea.Cmd) {
+func (s editorScreen) edUpdateMouse(msg tea.MouseMsg) (editorScreen, tea.Cmd) {
+	m := msg.Mouse()
 	if s.mode != edEditing {
 		return s, nil
 	}
@@ -343,11 +350,11 @@ func (s editorScreen) edUpdateMouse(m tea.MouseMsg) (editorScreen, tea.Cmd) {
 	// Wheel and two-finger touchpad scroll: the document moves under the
 	// Focus Line, which stays where it is.
 	switch m.Button {
-	case tea.MouseButtonWheelUp:
+	case tea.MouseWheelUp:
 		s.ed = s.ed.Scroll(-edWheelStep)
 		s.dragging = false
 		return s, nil
-	case tea.MouseButtonWheelDown:
+	case tea.MouseWheelDown:
 		s.ed = s.ed.Scroll(edWheelStep)
 		s.dragging = false
 		return s, nil
@@ -358,14 +365,14 @@ func (s editorScreen) edUpdateMouse(m tea.MouseMsg) (editorScreen, tea.Cmd) {
 	// press point to the cell reached, with the view still. On release a plain
 	// click (no movement) moves the Focus Line there, while after a drag the
 	// selection stays and the Focus Line does not move.
-	switch m.Action {
-	case tea.MouseActionRelease:
+	switch msg.(type) {
+	case tea.MouseReleaseMsg:
 		if s.dragging && !s.dragMoved && !s.ed.Reading() {
 			s.ed = s.ed.SetCursor(s.dragLine, s.dragCol)
 		}
 		s.dragging, s.dragMoved = false, false
 		return s, nil
-	case tea.MouseActionMotion:
+	case tea.MouseMotionMsg:
 		if !s.dragging {
 			return s, nil
 		}
@@ -378,12 +385,12 @@ func (s editorScreen) edUpdateMouse(m tea.MouseMsg) (editorScreen, tea.Cmd) {
 		return s, nil
 	}
 
-	if m.Action != tea.MouseActionPress || m.Button != tea.MouseButtonLeft {
+	if _, click := msg.(tea.MouseClickMsg); !click || m.Button != tea.MouseLeft {
 		return s, nil
 	}
 	// A click on a rendered link opens it: in reading mode, where a plain
 	// click does nothing else, and with ctrl held while editing.
-	if s.ed.Reading() || m.Ctrl {
+	if s.ed.Reading() || m.Mod&tea.ModCtrl != 0 {
 		if line, col, ok := s.edHit(m.X, m.Y); ok {
 			raw := []rune(s.ed.LineAt(line))
 			col = min(col, len(raw))
@@ -575,7 +582,7 @@ func (s editorScreen) View() string {
 	// The text occupies the content area minus the footer row.
 	chh := contentH(s.height)
 	var lines []string
-	if body := s.ed.View(); body != "" {
+	if body := s.ed.View().Content; body != "" {
 		lines = append(strings.Split(body, "\n"), "", s.ed.Footer())
 	}
 	if chh > 0 && len(lines) > chh {

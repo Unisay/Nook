@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // TestHelpNavigation checks that arrows switch page, that unknown keys leave
@@ -15,21 +15,21 @@ func TestHelpNavigation(t *testing.T) {
 		t.Fatalf("helpTab = %d, want %d", m.helpTab, helpTabList)
 	}
 
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRight})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Code: tea.KeyRight})
 	if m.helpTab != 1 {
 		t.Fatalf("helpTab after right = %d, want 1", m.helpTab)
 	}
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyLeft})
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyLeft})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Code: tea.KeyLeft})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Code: tea.KeyLeft})
 	if m.helpTab != len(helpPages)-1 {
 		t.Fatalf("helpTab after wrapping left = %d, want %d", m.helpTab, len(helpPages)-1)
 	}
 
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("z")})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Text: "z"})
 	if !m.helpOpen {
 		t.Fatal("helpOpen = false after unknown key, want true")
 	}
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyEsc})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Code: tea.KeyEscape})
 	if m.helpOpen {
 		t.Fatal("helpOpen = true after esc, want false")
 	}
@@ -38,7 +38,7 @@ func TestHelpNavigation(t *testing.T) {
 // TestHelpCtrlCQuits checks that ctrl+c still quits with help open.
 func TestHelpCtrlCQuits(t *testing.T) {
 	m := Model{width: 80, height: 24}.openHelp()
-	_, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyCtrlC})
+	_, _, quit := m.updateKey(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})
 	if !quit {
 		t.Fatal("quit = false, want true")
 	}
@@ -72,7 +72,7 @@ func TestRenderHelpStableWidth(t *testing.T) {
 func TestHelpScrollClamped(t *testing.T) {
 	m := Model{width: 80, height: 14}.openHelp()
 	for i := 0; i < 100; i++ {
-		m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyDown})
+		m, _, _ = m.updateKey(tea.KeyPressMsg{Code: tea.KeyDown})
 	}
 	max := len(helpPages[m.helpTab].rows) - helpBodyH(m.height)
 	if max < 0 {

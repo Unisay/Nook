@@ -4,8 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
+	"charm.land/lipgloss/v2"
 
 	"github.com/Unisay/Nook/theme"
 
@@ -61,7 +60,6 @@ func TestOverlayAt(t *testing.T) {
 // red style and confirmations the accent style, and that the toast no longer has a
 // badge background.
 func TestToastStyleByMessage(t *testing.T) {
-	lipgloss.SetColorProfile(termenv.TrueColor)
 
 	ok := toastLine("saved", 76)
 	if !strings.Contains(ok, theme.Toast.Render("saved")) {

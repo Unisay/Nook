@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // TestDebugKeyLog checks key diagnostics: with NOOK_DEBUG_KEYS=1
@@ -20,7 +20,7 @@ func TestDebugKeyLog(t *testing.T) {
 	path := filepath.Join(dir, "keys.log")
 
 	t.Setenv(debugKeysEnv, "1")
-	logKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+	logKey(tea.KeyPressMsg{Text: "x"})
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -41,7 +41,7 @@ func TestDebugKeyLog(t *testing.T) {
 	}
 
 	t.Setenv(debugKeysEnv, "0")
-	logKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+	logKey(tea.KeyPressMsg{Text: "x"})
 
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatalf("keys.log exists with diagnostics off (stat err = %v)", err)

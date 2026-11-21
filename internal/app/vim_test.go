@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/internal/store"
 )
@@ -37,12 +37,12 @@ func openVimNote(t *testing.T, body string) (Model, *store.Store, int64) {
 // esc and "\r" enter, and reports whether it asked to quit.
 func typeKeys(m Model, keys string) (Model, bool) {
 	for _, r := range keys {
-		k := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}}
+		k := tea.KeyPressMsg{Code: r, Text: string(r)}
 		switch r {
 		case '\x1b':
-			k = tea.KeyMsg{Type: tea.KeyEsc}
+			k = tea.KeyPressMsg{Code: tea.KeyEscape}
 		case '\r':
-			k = tea.KeyMsg{Type: tea.KeyEnter}
+			k = tea.KeyPressMsg{Code: tea.KeyEnter}
 		}
 		var quit bool
 		if m, _, quit = m.updateKey(k); quit {
@@ -174,7 +174,7 @@ func TestVimWriteQuitStaysWhenSaveFails(t *testing.T) {
 // mode and cancels a pending command without quitting, and quits from
 // NORMAL mode as usual.
 func TestVimCtrlCCancels(t *testing.T) {
-	ctrlC := tea.KeyMsg{Type: tea.KeyCtrlC}
+	ctrlC := tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl}
 	for _, keys := range []string{"ihi", "vl", "d", "3", ":w"} {
 		m, _, _ := openVimNote(t, "hello")
 		m, _ = typeKeys(m, keys)
@@ -203,7 +203,7 @@ func TestCtrlCQuitsWithoutVim(t *testing.T) {
 	m.editor = newEditorScreen(nil, nil, 80, 24)
 
 	m, _ = typeKeys(m, "ab")
-	if _, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyCtrlC}); !quit {
+	if _, _, quit := m.updateKey(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl}); !quit {
 		t.Fatal("quit = false, want true")
 	}
 }
@@ -226,7 +226,7 @@ func TestVimPaletteInVisual(t *testing.T) {
 	m, _, _ := openVimNote(t, "hello")
 
 	m, _ = typeKeys(m, "0vl")
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyCtrlT})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl})
 	if m.editor.mode != edFormatPalette {
 		t.Fatalf("mode = %v after ctrl+t, want the palette", m.editor.mode)
 	}
@@ -246,7 +246,7 @@ func TestVimHelpKeepsMode(t *testing.T) {
 	m, _, _ := openVimNote(t, "hello")
 
 	m, _ = typeKeys(m, "i")
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyF1})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Code: tea.KeyF1})
 	if !m.helpOpen || m.helpTab != helpTabEditor {
 		t.Fatalf("help open %v tab %d, want the editor page", m.helpOpen, m.helpTab)
 	}

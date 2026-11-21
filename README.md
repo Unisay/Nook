@@ -30,17 +30,21 @@ With the `Makefile`: `make build`, `make run`, `make test`, `make vet`, `make fm
 
 ## Embed the Focus Line editor
 
-Import `github.com/Unisay/Nook/editor` in a Bubble Tea v1 application.
+Import `github.com/Unisay/Nook/editor` in a Bubble Tea v2 application.
 Create the model with `ed := editor.New(lines, width, height)`. In the parent
 model's update method, call `next, cmd := ed.Update(msg)`, store
 `ed = next.(editor.Editor)` and return the command. Resize with
-`ed = ed.SetSize(width, height)`, render with `ed.View()` and read the
-edited text with `ed.Lines()`.
+`ed = ed.SetSize(width, height)`, embed `ed.View().Content` in the parent view and read the
+edited text with `ed.Lines()`. After each update, handle and clear
+`WantsSave`, `WantsExit` (request to leave), and `WantsQuit` (immediate quit).
+Vim’s `:wq` sets both save and exit.
 
 The default theme is dark. To select a different palette, import
 `github.com/Unisay/Nook/theme`, call `theme.Resolve(name, configDir)`,
 check the error and pass the result to `theme.Use` before starting the
-Bubble Tea program. All editor instances share this palette.
+Bubble Tea program. All editor instances share this palette. For automatic selection, start with
+the dark palette, request `tea.RequestBackgroundColor` from the parent, and
+apply the dark or light palette on `tea.BackgroundColorMsg` using `IsDark()`.
 
 ## Usage
 
@@ -396,8 +400,8 @@ one that matches the current screen. Use `←`/`→` (or `tab`, or `1`–`6`) to
 
 ## Key diagnostics
 
-With `NOOK_DEBUG_KEYS=1` every `tea.KeyMsg` received is appended to
-`~/.nook/keys.log` (one line per key, with `Type`, `Runes`, `Alt`, `Paste` and
+With `NOOK_DEBUG_KEYS=1` every `tea.KeyPressMsg` received is appended to
+`~/.nook/keys.log` (one line per key, with `Type`, `Text`, `Mod` and
 `String`), useful to see what your terminal actually sends. Messages the
 application doesn't recognise are logged as well — for example unknown escape
 sequences (CSI), which bubbletea delivers as generic messages — in the format:
@@ -407,7 +411,7 @@ Type=%T Val=%q
 ```
 
 that is, the Go type of the message and its quoted value (one line per message).
-Messages that are already handled (`WindowSizeMsg`, `KeyMsg`, `MouseMsg` and the
+Messages that are already handled (`WindowSizeMsg`, `KeyPressMsg`, `MouseMsg` and the
 ticks that dismiss toasts) don't end up in this log: keys stay recorded in the
 `logKey` line. Without that variable (or with a value other than `1`) nothing is
 written and the file is not created.

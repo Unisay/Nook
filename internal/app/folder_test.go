@@ -1,10 +1,11 @@
 package app
 
 import (
+	"github.com/charmbracelet/x/ansi"
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/internal/store"
 )
@@ -43,7 +44,7 @@ func TestFolderNavigation(t *testing.T) {
 
 	// The first entry is the folder: the right arrow enters it.
 	s.selected = 0
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRight})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyRight})
 	if s.folderID == nil || *s.folderID != folder.ID {
 		t.Fatalf("folderID after → = %v, want %d", s.folderID, folder.ID)
 	}
@@ -58,7 +59,7 @@ func TestFolderNavigation(t *testing.T) {
 	}
 
 	// Left arrow: back to the root.
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyLeft})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyLeft})
 	if s.folderID != nil || len(s.path) != 0 {
 		t.Fatalf("after ← folderID = %v, path = %+v; want root", s.folderID, s.path)
 	}
@@ -68,11 +69,11 @@ func TestFolderNavigation(t *testing.T) {
 
 	// Enter on the folder enters it, esc leaves it.
 	s.selected = 0
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyEnter})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 	if s.folderID == nil {
 		t.Fatal("enter on the folder did not enter it")
 	}
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyEsc})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyEscape})
 	if s.folderID != nil {
 		t.Fatal("esc did not go back up to the root")
 	}
@@ -90,12 +91,12 @@ func TestEnterOnNoteOpensEditor(t *testing.T) {
 	s := newListScreen(st, 80, 24)
 	s.load()
 
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRight})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyRight})
 	if s.action == listOpen {
 		t.Error("→ on a note opened the editor, want no action")
 	}
 
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyEnter})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 	if s.action != listOpen || s.actionID != note.ID {
 		t.Errorf("enter on the note: action = %v, id = %d; want listOpen on %d", s.action, s.actionID, note.ID)
 	}
@@ -110,12 +111,12 @@ func TestCreateFolderKey(t *testing.T) {
 	m.list = newListScreen(st, 80, 24)
 	m.list.load()
 
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("c")})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Text: "c"})
 	if m.list.mode != modeInputNewFolder {
 		t.Fatalf("mode after \"c\" = %v, want modeInputNewFolder", m.list.mode)
 	}
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("ideas")})
-	m, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyEnter})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Text: "ideas"})
+	m, _, quit := m.updateKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 	if quit {
 		t.Fatal("quit = true after enter, want false")
 	}
@@ -142,14 +143,14 @@ func TestNewNoteGoesIntoCurrentFolder(t *testing.T) {
 	s := newListScreen(st, 80, 24)
 	s.load()
 	s.selected = 0
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRight})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyRight})
 	if s.folderID == nil {
 		t.Fatal("did not enter the folder")
 	}
 
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("n")})
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("inner")})
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyEnter})
+	s, _ = s.updateKey(tea.KeyPressMsg{Text: "n"})
+	s, _ = s.updateKey(tea.KeyPressMsg{Text: "inner"})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 
 	if len(s.notes) != 1 || s.notes[0].Title != "inner" {
 		t.Fatalf("notes in the folder = %+v, want only \"inner\"", s.notes)
@@ -181,7 +182,7 @@ func TestDeleteFolderRemovesContent(t *testing.T) {
 	s.selected = 0
 
 	// "d" asks for confirmation, "y" confirms.
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("d")})
+	s, _ = s.updateKey(tea.KeyPressMsg{Text: "d"})
 	if s.mode != modeConfirmDelete {
 		t.Fatalf("mode after \"d\" = %v, want modeConfirmDelete", s.mode)
 	}
@@ -189,7 +190,7 @@ func TestDeleteFolderRemovesContent(t *testing.T) {
 	if !strings.Contains(box, "folder") {
 		t.Errorf("the confirmation does not mention a folder: %q", box)
 	}
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})
+	s, _ = s.updateKey(tea.KeyPressMsg{Text: "y"})
 
 	if len(s.folders) != 0 || len(s.notes) != 0 {
 		t.Fatalf("after deletion: %d folders, %d notes; want 0 and 0", len(s.folders), len(s.notes))
@@ -215,17 +216,17 @@ func TestListTitleBreadcrumb(t *testing.T) {
 	s := newListScreen(st, 80, 24)
 	s.load()
 
-	if got := strings.TrimSpace(s.listTitle(60)); got != "NOOK" {
+	if got := strings.TrimSpace(ansi.Strip(s.listTitle(60))); got != "NOOK" {
 		t.Errorf("title at the root = %q, want \"NOOK\"", got)
 	}
 
 	s = s.enterFolder(root.ID)
-	if got := strings.TrimSpace(s.listTitle(60)); got != "NOOK › projects" {
+	if got := strings.TrimSpace(ansi.Strip(s.listTitle(60))); got != "NOOK › projects" {
 		t.Errorf("title inside the folder = %q, want \"NOOK › projects\"", got)
 	}
 
 	s = s.enterFolder(child.ID)
-	if got := strings.TrimSpace(s.listTitle(60)); got != "NOOK › projects › 2026" {
+	if got := strings.TrimSpace(ansi.Strip(s.listTitle(60))); got != "NOOK › projects › 2026" {
 		t.Errorf("title in the subfolder = %q, want the full path", got)
 	}
 }
@@ -277,9 +278,9 @@ func TestNewNoteSelectsItAmongFolders(t *testing.T) {
 	s := newListScreen(st, 80, 24)
 	s.load()
 
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("n")})
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("fresh")})
-	s, _ = s.updateKey(tea.KeyMsg{Type: tea.KeyEnter})
+	s, _ = s.updateKey(tea.KeyPressMsg{Text: "n"})
+	s, _ = s.updateKey(tea.KeyPressMsg{Text: "fresh"})
+	s, _ = s.updateKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 
 	e, ok := s.currentEntry()
 	if !ok || e.kind != entryNote || e.title != "fresh" {

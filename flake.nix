@@ -57,7 +57,7 @@
           version = self.shortRev or self.dirtyShortRev or "dev";
           src = self;
 
-          vendorHash = "sha256-GA0bnoXj/af54MMem3/6yleecvCdZSkM9TGsa/cJMdw=";
+          vendorHash = "sha256-IuPoZG5lw+KScX+7UBwDC9+qRjYKw+egW+1KmJ+JifE=";
           postInstall = ''
             mv "$out/bin/Nook" "$out/bin/nook"
           '';

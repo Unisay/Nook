@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/editor"
 	"github.com/Unisay/Nook/internal/store"
@@ -28,7 +28,7 @@ func newKeysTestStore(t *testing.T) *store.Store {
 func TestHelpF1Toggles(t *testing.T) {
 	m := Model{width: 80, height: 24}
 
-	m2, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyF1})
+	m2, _, quit := m.updateKey(tea.KeyPressMsg{Code: tea.KeyF1})
 
 	if quit {
 		t.Fatal("quit = true, want false")
@@ -45,7 +45,7 @@ func TestHelpQuestionToggles(t *testing.T) {
 	m := Model{st: st, width: 80, height: 24, screen: screenList}
 	m.list = newListScreen(st, 80, 24)
 
-	m2, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
+	m2, _, quit := m.updateKey(tea.KeyPressMsg{Text: "?"})
 
 	if quit {
 		t.Fatal("quit = true, want false")
@@ -77,7 +77,7 @@ func TestEditorCtrlQPopup(t *testing.T) {
 		height: 24,
 	}
 
-	m2, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyCtrlQ})
+	m2, _, quit := m.updateKey(tea.KeyPressMsg{Code: 'q', Mod: tea.ModCtrl})
 
 	if quit {
 		t.Fatal("quit = true, want false")
@@ -103,7 +103,7 @@ func TestEditorSpaceFlows(t *testing.T) {
 		height: 24,
 	}
 
-	m2, _, _ := m.updateKey(tea.KeyMsg{Type: tea.KeySpace, Runes: []rune(" ")})
+	m2, _, _ := m.updateKey(tea.KeyPressMsg{Text: " "})
 
 	if got := m2.editor.ed.Lines()[0]; got != "a " {
 		t.Fatalf("editor.ed.Lines()[0] = %q, want %q", got, "a ")
@@ -122,7 +122,7 @@ func TestLetterSynonyms(t *testing.T) {
 	m.list = newListScreen(st, 80, 24)
 	m.list.load()
 
-	m2, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("n")})
+	m2, _, quit := m.updateKey(tea.KeyPressMsg{Text: "n"})
 	if quit {
 		t.Fatal("quit = true after \"n\", want false")
 	}
@@ -130,7 +130,7 @@ func TestLetterSynonyms(t *testing.T) {
 		t.Fatalf("list.mode = %v after \"n\", want modeInputNew", m2.list.mode)
 	}
 
-	m3, _, quit := m2.updateKey(tea.KeyMsg{Type: tea.KeyEsc})
+	m3, _, quit := m2.updateKey(tea.KeyPressMsg{Code: tea.KeyEscape})
 	if quit {
 		t.Fatal("quit = true after esc, want false")
 	}
@@ -138,7 +138,7 @@ func TestLetterSynonyms(t *testing.T) {
 		t.Fatalf("list.mode = %v after esc, want modeNormal", m3.list.mode)
 	}
 
-	_, _, quit = m3.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")})
+	_, _, quit = m3.updateKey(tea.KeyPressMsg{Text: "q"})
 	if !quit {
 		t.Fatal("quit = false after \"q\", want true")
 	}
@@ -157,12 +157,12 @@ func TestNewNoteStaysInList(t *testing.T) {
 	m.list.load()
 
 	// "n" opens the title popup, then the text and enter create the note.
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("n")})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Text: "n"})
 	if m.list.mode != modeInputNew {
 		t.Fatalf("list.mode = %v after \"n\", want modeInputNew", m.list.mode)
 	}
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("fresh")})
-	m, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyEnter})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Text: "fresh"})
+	m, _, quit := m.updateKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 	if quit {
 		t.Fatal("quit = true after enter, want false")
 	}
@@ -215,7 +215,7 @@ func TestPaletteOpensAndApplies(t *testing.T) {
 
 	// ctrl+t opens the palette: the text does not change and the flag that requests it is
 	// cleared by the screen.
-	m2, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyCtrlT})
+	m2, _, quit := m.updateKey(tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl})
 	if quit {
 		t.Fatal("quit = true after ctrl+t, want false")
 	}
@@ -234,7 +234,7 @@ func TestPaletteOpensAndApplies(t *testing.T) {
 
 	// Enter applies the current entry (the first one: bold "b") and closes the
 	// palette, going back to editing mode.
-	m3, _, quit := m2.updateKey(tea.KeyMsg{Type: tea.KeyEnter})
+	m3, _, quit := m2.updateKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 	if quit {
 		t.Fatal("quit = true after enter, want false")
 	}
@@ -295,8 +295,8 @@ func TestPaletteLetterApplies(t *testing.T) {
 	m := Model{width: w, height: h, screen: screenEditor}
 	m.editor = editorScreen{ed: ed, mode: edEditing, width: w, height: h}
 
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyCtrlT})
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Text: "i"})
 
 	if m.editor.mode != edEditing {
 		t.Fatalf("editor.mode = %v after the letter, want edEditing", m.editor.mode)
@@ -320,7 +320,7 @@ func TestCopyActionCopiesSelection(t *testing.T) {
 	m := Model{width: w, height: h, screen: screenEditor}
 	m.editor = editorScreen{ed: ed, mode: edEditing, width: w, height: h}
 
-	model, _ := m.applyCSIAction(csiCopy)
+	model, _ := m.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl | tea.ModShift})
 	if copied != "line" {
 		t.Fatalf("copied = %q, want %q", copied, "line")
 	}
@@ -330,7 +330,7 @@ func TestCopyActionCopiesSelection(t *testing.T) {
 
 	copied = ""
 	m.editor.ed = editor.New([]string{"a test line"}, contentW(w), edHeight(contentH(h)))
-	m.applyCSIAction(csiCopy)
+	m.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl | tea.ModShift})
 	if copied != "" {
 		t.Errorf("copied %q with nothing selected", copied)
 	}
@@ -343,7 +343,7 @@ func TestCtrlCQuitsEvenWithSelection(t *testing.T) {
 	m := Model{width: w, height: h, screen: screenEditor}
 	m.editor = editorScreen{ed: ed, mode: edEditing, width: w, height: h}
 
-	if _, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyCtrlC}); !quit {
+	if _, _, quit := m.updateKey(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl}); !quit {
 		t.Fatal("quit = false, want true")
 	}
 }
@@ -354,11 +354,11 @@ func TestUndoAction(t *testing.T) {
 	m := Model{width: w, height: h, screen: screenEditor}
 	m.editor = editorScreen{ed: editor.New([]string{"a"}, contentW(w), edHeight(contentH(h))), mode: edEditing, width: w, height: h}
 
-	m, _, _ = m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("b")})
+	m, _, _ = m.updateKey(tea.KeyPressMsg{Text: "b"})
 	if got := m.editor.ed.Lines()[0]; got != "ab" {
 		t.Fatalf("line = %q, want %q", got, "ab")
 	}
-	model, _ := m.applyCSIAction(csiUndo)
+	model, _ := m.Update(tea.KeyPressMsg{Code: 'z', Mod: tea.ModCtrl | tea.ModShift})
 	if got := model.(Model).editor.ed.Lines()[0]; got != "a" {
 		t.Fatalf("after undo line = %q, want %q", got, "a")
 	}

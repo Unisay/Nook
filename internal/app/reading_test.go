@@ -4,19 +4,19 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func TestCtrlPTogglesReadingWithToast(t *testing.T) {
 	s := newDragTestScreen(t)
-	s, _ = s.Update(tea.KeyMsg{Type: tea.KeyCtrlP})
+	s, _ = s.Update(tea.KeyPressMsg{Code: 'p', Mod: tea.ModCtrl})
 	if !s.ed.Reading() {
 		t.Fatal("not reading after ctrl+p")
 	}
 	if s.ed.ReadChanged {
 		t.Fatal("ReadChanged not consumed")
 	}
-	s, _ = s.Update(tea.KeyMsg{Type: tea.KeyCtrlP})
+	s, _ = s.Update(tea.KeyPressMsg{Code: 'p', Mod: tea.ModCtrl})
 	if s.ed.Reading() {
 		t.Fatal("still reading")
 	}
@@ -33,12 +33,12 @@ func TestReadingDefaultOpensRead(t *testing.T) {
 
 func TestReadingClickMovesNothing(t *testing.T) {
 	s := newDragTestScreen(t)
-	s, _ = s.Update(tea.KeyMsg{Type: tea.KeyCtrlP})
+	s, _ = s.Update(tea.KeyPressMsg{Code: 'p', Mod: tea.ModCtrl})
 	body := strings.Join(s.ed.Lines(), "\n")
 	r, c := s.ed.CursorRow(), s.ed.CursorCol1()
-	s, _ = s.Update(tea.MouseMsg{Action: tea.MouseActionPress, Button: tea.MouseButtonLeft, X: 6, Y: focusY + 1})
-	s, _ = s.Update(tea.MouseMsg{Action: tea.MouseActionRelease, Button: tea.MouseButtonLeft, X: 6, Y: focusY + 1})
-	s, _ = s.Update(tea.MouseMsg{Button: tea.MouseButtonWheelDown, Action: tea.MouseActionPress})
+	s, _ = s.Update(tea.MouseClickMsg{Button: tea.MouseLeft, X: 6, Y: focusY + 1})
+	s, _ = s.Update(tea.MouseReleaseMsg{Button: tea.MouseLeft, X: 6, Y: focusY + 1})
+	s, _ = s.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
 	if strings.Join(s.ed.Lines(), "\n") != body {
 		t.Fatal("text changed")
 	}
@@ -58,10 +58,10 @@ func TestReadingClickOpensLink(t *testing.T) {
 	defer func() { openURL = old }()
 
 	s := newEditorScreen(st, note, 60, 12)
-	s, _ = s.Update(tea.KeyMsg{Type: tea.KeyCtrlP})
+	s, _ = s.Update(tea.KeyPressMsg{Code: 'p', Mod: tea.ModCtrl})
 	found := false
 	for y := 0; y < 12 && !found; y++ {
-		s, _ = s.Update(tea.MouseMsg{Action: tea.MouseActionPress, Button: tea.MouseButtonLeft, X: 3, Y: y})
+		s, _ = s.Update(tea.MouseClickMsg{Button: tea.MouseLeft, X: 3, Y: y})
 		found = got != ""
 	}
 	if got != "https://example.com" {

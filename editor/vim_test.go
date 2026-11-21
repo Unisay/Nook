@@ -5,28 +5,28 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 )
 
 // vimNamedKeys are the keys vimKeys accepts between angle brackets.
-var vimNamedKeys = map[string]tea.KeyType{
-	"esc": tea.KeyEsc, "cr": tea.KeyEnter, "bs": tea.KeyBackspace, "del": tea.KeyDelete,
-	"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
-	"home": tea.KeyHome, "end": tea.KeyEnd,
-	"C-r": tea.KeyCtrlR, "C-d": tea.KeyCtrlD, "C-u": tea.KeyCtrlU, "C-s": tea.KeyCtrlS,
-	"C-q": tea.KeyCtrlQ, "C-t": tea.KeyCtrlT, "C-y": tea.KeyCtrlY,
+var vimNamedKeys = map[string]tea.KeyPressMsg{
+	"esc": {Code: tea.KeyEscape}, "cr": {Code: tea.KeyEnter}, "bs": {Code: tea.KeyBackspace}, "del": {Code: tea.KeyDelete},
+	"up": {Code: tea.KeyUp}, "down": {Code: tea.KeyDown}, "left": {Code: tea.KeyLeft}, "right": {Code: tea.KeyRight},
+	"home": {Code: tea.KeyHome}, "end": {Code: tea.KeyEnd},
+	"C-r": {Code: 'r', Mod: tea.ModCtrl}, "C-d": {Code: 'd', Mod: tea.ModCtrl}, "C-u": {Code: 'u', Mod: tea.ModCtrl}, "C-s": {Code: 's', Mod: tea.ModCtrl},
+	"C-q": {Code: 'q', Mod: tea.ModCtrl}, "C-t": {Code: 't', Mod: tea.ModCtrl}, "C-y": {Code: 'y', Mod: tea.ModCtrl},
 }
 
 // vimKeys turns a key sequence into KeyMsgs: one per rune, or a named key
 // between angle brackets ("dw", "ihi<esc>", "<C-r>").
-func vimKeys(s string) []tea.KeyMsg {
-	var out []tea.KeyMsg
+func vimKeys(s string) []tea.Msg {
+	var out []tea.Msg
 	for s != "" {
 		if s[0] == '<' {
 			if end := strings.IndexByte(s, '>'); end > 0 {
 				if t, ok := vimNamedKeys[s[1:end]]; ok {
-					out = append(out, tea.KeyMsg{Type: t})
+					out = append(out, t)
 					s = s[end+1:]
 					continue
 				}
@@ -35,9 +35,9 @@ func vimKeys(s string) []tea.KeyMsg {
 		r, size := utf8.DecodeRuneInString(s)
 		s = s[size:]
 		if r == ' ' {
-			out = append(out, tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}})
+			out = append(out, tea.KeyPressMsg{Code: tea.KeySpace, Text: " "})
 		} else {
-			out = append(out, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+			out = append(out, tea.KeyPressMsg{Code: r, Text: string(r)})
 		}
 	}
 	return out
@@ -51,8 +51,8 @@ func vimRun(lines []string, keys string) Editor {
 }
 
 // paste is a KeyMsg carrying text pasted from the terminal.
-func paste(s string) tea.KeyMsg {
-	return tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(s), Paste: true}
+func paste(s string) tea.PasteMsg {
+	return tea.PasteMsg{Content: s}
 }
 
 // text is the editor's text, lines joined by "\n".
@@ -470,7 +470,7 @@ func TestVimPaste(t *testing.T) {
 			t.Errorf("%s: still VISUAL or pending after the paste", tt.name)
 		}
 	}
-	if e := press(vimRun([]string{"a"}, ":"), paste("wq"), tea.KeyMsg{Type: tea.KeyEnter}); !e.WantsSave || !e.WantsExit {
+	if e := press(vimRun([]string{"a"}, ":"), paste("wq"), tea.KeyPressMsg{Code: tea.KeyEnter}); !e.WantsSave || !e.WantsExit {
 		t.Errorf("paste on the command line: WantsSave %v WantsExit %v, want true true", e.WantsSave, e.WantsExit)
 	}
 }
@@ -589,8 +589,8 @@ func TestVimResize(t *testing.T) {
 	if e.cursorLine != 11 {
 		t.Errorf("ctrl+d with height 4: line %d, want 11", e.cursorLine)
 	}
-	if !strings.Contains(e.View(), "line") {
-		t.Errorf("view after resize = %q", e.View())
+	if !strings.Contains(e.View().Content, "line") {
+		t.Errorf("view after resize = %q", e.View().Content)
 	}
 }
 
@@ -608,7 +608,7 @@ func TestVimOffKeepsUsualKeys(t *testing.T) {
 		t.Errorf("footer = %q, want the usual hint", got)
 	}
 	e = New([]string{"abcd"}, 40, 10).SetCursor(0, 0)
-	e = press(e, tea.KeyMsg{Type: tea.KeyShiftRight}, tea.KeyMsg{Type: tea.KeyShiftRight})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModShift}, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModShift})
 	if got, _ := e.SelectedText(); got != "ab" {
 		t.Errorf("shift+right twice selects %q, want %q", got, "ab")
 	}

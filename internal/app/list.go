@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 
 	"github.com/Unisay/Nook/internal/store"
 	"github.com/Unisay/Nook/theme"
@@ -71,7 +71,7 @@ func newListScreen(st *store.Store, w, h int) listScreen {
 	ti := textinput.New()
 	ti.Placeholder = "Title"
 	ti.CharLimit = 200
-	ti.Width = 40
+	ti.SetWidth(40)
 
 	return listScreen{
 		st:     st,
@@ -315,16 +315,23 @@ func (s listScreen) Update(msg tea.Msg) (listScreen, tea.Cmd) {
 		s.toast = ""
 		s.toastUntil = time.Time{}
 		return s, nil
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return s.updateKey(msg)
-	case tea.MouseMsg:
+	case tea.PasteMsg:
+		switch s.mode {
+		case modeInputNew, modeInputRename, modeInputFilter, modeInputNewFolder:
+			var cmd tea.Cmd
+			s.input, cmd = s.input.Update(msg)
+			return s, cmd
+		}
+	case tea.MouseClickMsg:
 		return s.updateMouse(msg)
 	}
 	return s, nil
 }
 
 // updateKey handles a key according to the shared scheme.
-func (s listScreen) updateKey(keyMsg tea.KeyMsg) (listScreen, tea.Cmd) {
+func (s listScreen) updateKey(keyMsg tea.KeyPressMsg) (listScreen, tea.Cmd) {
 	key := keyMsg.String()
 	mode := s.mode
 
@@ -537,11 +544,11 @@ func (s listScreen) listHitNote(x, y int) (int, bool) {
 // cell and a double click (second click on the same entry and the same
 // cell within listDoubleClickThreshold) opens the note or enters the folder.
 // In the other modes the mouse is ignored.
-func (s listScreen) updateMouse(m tea.MouseMsg) (listScreen, tea.Cmd) {
+func (s listScreen) updateMouse(m tea.MouseClickMsg) (listScreen, tea.Cmd) {
 	if s.mode != modeNormal {
 		return s, nil
 	}
-	if m.Action != tea.MouseActionPress || m.Button != tea.MouseButtonLeft {
+	if m.Button != tea.MouseLeft {
 		return s, nil
 	}
 	idx, ok := s.listHitNote(m.X, m.Y)

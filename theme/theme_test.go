@@ -4,25 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	lipgloss "github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
-
 	"github.com/Unisay/Nook/markdown"
 	"github.com/Unisay/Nook/themefile"
 )
 
-// setTrueColorProfile forces an explicit colour profile on the lipgloss renderer: in
-// tests the output is not a terminal and the detected profile would be Ascii, with
-// which every style would render the empty string and the comparisons would say
-// nothing about the appearance of the styles.
-func setTrueColorProfile() {
-	lipgloss.SetColorProfile(termenv.TrueColor)
-}
-
 // TestDimStylesDiffer checks that every full style has a dimmed rendering
 // that is different: lines without focus must not look like those in focus.
 func TestDimStylesDiffer(t *testing.T) {
-	setTrueColorProfile()
 
 	for k, full := range Styles {
 		dim, ok := DimStyles[k]
@@ -40,7 +28,6 @@ func TestDimStylesDiffer(t *testing.T) {
 // TestServiceStyles checks that the utility styles Rev and Toast produce
 // a non-empty rendering.
 func TestServiceStyles(t *testing.T) {
-	setTrueColorProfile()
 
 	if got := Rev.String(); got == "" {
 		t.Error("Rev.String() = \"\", want non-empty rendering")
@@ -53,7 +40,6 @@ func TestServiceStyles(t *testing.T) {
 // TestFolderStyles checks that the selected folder is not underlined and
 // that it still stands out from unselected ones.
 func TestFolderStyles(t *testing.T) {
-	setTrueColorProfile()
 
 	if FolderSel.GetUnderline() {
 		t.Error("FolderSel has underlining, want none")
@@ -74,7 +60,6 @@ func TestFolderStyles(t *testing.T) {
 // TestQuoteStyles checks that the quote text is in italics and that the
 // bar has a style of its own, distinct from the text.
 func TestQuoteStyles(t *testing.T) {
-	setTrueColorProfile()
 
 	if !Styles[markdown.StyleQuote].GetItalic() {
 		t.Error("Styles[StyleQuote] is not in italics")
@@ -99,7 +84,6 @@ func TestQuoteStyles(t *testing.T) {
 // TestQuoteItalicRendered checks that the italic attribute (SGR 3) appears
 // really in the rendering of the quote text.
 func TestQuoteItalicRendered(t *testing.T) {
-	setTrueColorProfile()
 
 	if got := Styles[markdown.StyleQuote].Render("x"); !strings.Contains(got, "\x1b[3") {
 		t.Errorf("the rendering of the quote text does not contain italics: %q", got)
@@ -109,7 +93,6 @@ func TestQuoteItalicRendered(t *testing.T) {
 // TestUseSwitchesTheme checks that Use replaces every style, and that the
 // light theme really looks different from the dark one.
 func TestUseSwitchesTheme(t *testing.T) {
-	setTrueColorProfile()
 	t.Cleanup(func() { Use(mustBuiltin(t, "dark")) })
 
 	Use(mustBuiltin(t, "dark"))
@@ -130,7 +113,6 @@ func TestUseSwitchesTheme(t *testing.T) {
 // TestCustomColoursReachStyles checks hex colours and attributes of a custom
 // theme end up in the rendered text.
 func TestCustomColoursReachStyles(t *testing.T) {
-	setTrueColorProfile()
 	t.Cleanup(func() { Use(mustBuiltin(t, "dark")) })
 
 	th, err := themefile.Parse("[dim]\nbold = \"fg=#ff0000 italic\"\n", themefile.Builtin)

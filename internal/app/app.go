@@ -2,9 +2,11 @@
 package app
 
 import (
+	"github.com/Unisay/Nook/theme"
+	"github.com/Unisay/Nook/themefile"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
 	"github.com/Unisay/Nook/internal/store"
@@ -46,13 +48,14 @@ const (
 
 // Model is the root model of the application.
 type Model struct {
-	st       *store.Store
-	screen   screen
-	list     listScreen
-	editor   editorScreen
-	helpOpen bool
-	width    int
-	height   int
+	st        *store.Store
+	screen    screen
+	list      listScreen
+	editor    editorScreen
+	autoTheme bool
+	helpOpen  bool
+	width     int
+	height    int
 
 	// helpTab and helpScroll are the active page and its scroll offset.
 	helpTab    int
@@ -68,30 +71,51 @@ func New(st *store.Store) Model {
 	return m
 }
 
-// Init sets the initial window title and does nothing else.
-func (m Model) Init() tea.Cmd { return m.titleCmd() }
+func (m Model) WithAutoTheme(auto bool) Model { m.autoTheme = auto; return m }
+func (m Model) Init() tea.Cmd {
+	if m.autoTheme {
+		return tea.RequestBackgroundColor
+	}
+	return nil
+}
 
 // Update handles messages: keys go first to help and to the exits, then
 // to the active screen; every other message (the toast ticks) is
 // propagated to the active screen, which turns it into the command that concerns it.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	logMsg(msg)
-	if action, ok := csiAction(msg); ok {
-		return m.applyCSIAction(action)
-	}
 	switch msg := msg.(type) {
+	case tea.BackgroundColorMsg:
+		if m.autoTheme {
+			name := "light"
+			if msg.IsDark() {
+				name = "dark"
+			}
+			t, _ := themefile.Builtin(name)
+			theme.Use(t)
+		}
+		return m, nil
+	case tea.PasteMsg:
+		if m.helpOpen {
+			return m, nil
+		}
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.list = m.list.setSize(m.width, m.height)
 		m.editor = m.editor.setSize(m.width, m.height)
-		return m, m.titleCmd()
-	case tea.KeyMsg:
+		return m, nil
+	case tea.KeyPressMsg:
+		switch msg.Keystroke() {
+		case "ctrl+shift+z":
+			return m.applyShortcut("undo")
+		case "ctrl+shift+c", "ctrl+shift+y":
+			return m.applyShortcut("copy")
+		}
 		model, cmd, quit := m.updateKey(msg)
 		if quit {
 			return model, tea.Quit
 		}
-		// The title has to be re-emitted after every key: Dirty may have changed.
-		return model, tea.Batch(cmd, model.titleCmd())
+		return model, cmd
 	}
 	model, cmd := m.updateScreen(msg)
 	return model, cmd
@@ -99,7 +123,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // updateKey handles a key at application level. The third value says
 // whether the application must quit.
-func (m Model) updateKey(keyMsg tea.KeyMsg) (Model, tea.Cmd, bool) {
+func (m Model) updateKey(keyMsg tea.KeyPressMsg) (Model, tea.Cmd, bool) {
 	logKey(keyMsg)
 
 	key := keyMsg.String()
@@ -118,7 +142,7 @@ func (m Model) updateKey(keyMsg tea.KeyMsg) (Model, tea.Cmd, bool) {
 	// command, as in vim, instead of quitting with the note half edited; from
 	// NORMAL mode it quits as usual.
 	if key == "ctrl+c" && m.screen == screenEditor && m.editor.mode == edEditing && m.editor.ed.VimBusy() {
-		keyMsg, key = tea.KeyMsg{Type: tea.KeyEsc}, "esc"
+		keyMsg, key = tea.KeyPressMsg{Code: tea.KeyEscape}, "esc"
 	}
 
 	// Only ctrl+c quits immediately: ctrl+q reaches the active screen, where
@@ -171,24 +195,21 @@ func (m Model) copySelection() Model {
 	return m
 }
 
-// applyCSIAction performs an action decoded from a "CSI u" key sequence (see
-// csiAction). They only act in the editor, and never quit.
-func (m Model) applyCSIAction(action string) (tea.Model, tea.Cmd) {
+// applyShortcut handles modified keys in the active editor.
+func (m Model) applyShortcut(action string) (tea.Model, tea.Cmd) {
 	if m.screen != screenEditor || m.editor.mode != edEditing {
 		return m, nil
 	}
 	switch action {
-	case csiUndo:
+	case "undo":
 		m.editor.ed = m.editor.ed.Undo()
-	case csiRedo:
-		m.editor.ed = m.editor.ed.Redo()
-	case csiCopy:
+	case "copy":
 		if !m.hasSelection() {
 			return m, nil
 		}
-		return m.copySelection(), tea.Batch(edToastTickCmd(), m.titleCmd())
+		return m.copySelection(), edToastTickCmd()
 	}
-	return m, m.titleCmd()
+	return m, nil
 }
 
 // applyListAction performs the action that the list requested from the root model:
@@ -258,12 +279,16 @@ func (m Model) windowTitle() string {
 	return appName
 }
 
-// titleCmd returns the command that sets the window title.
-func (m Model) titleCmd() tea.Cmd { return tea.SetWindowTitle(m.windowTitle()) }
-
 // View renders the active screen; with help open the screen stays
 // visible and the centred help popup is overlaid on top of it.
-func (m Model) View() string {
+func (m Model) View() tea.View {
+	v := tea.NewView(m.body())
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+	v.WindowTitle = m.windowTitle()
+	return v
+}
+func (m Model) body() string {
 	var base string
 	switch m.screen {
 	case screenList:

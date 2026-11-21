@@ -1,9 +1,12 @@
 package app
 
 import (
+	"github.com/Unisay/Nook/theme"
+	"github.com/Unisay/Nook/themefile"
+	"image/color"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/Unisay/Nook/editor"
 )
@@ -13,7 +16,7 @@ import (
 func TestHelpKeyToggle(t *testing.T) {
 	m := Model{width: 80, height: 24}
 
-	m2, _, quit := m.updateKey(tea.KeyMsg{Type: tea.KeyF1})
+	m2, _, quit := m.updateKey(tea.KeyPressMsg{Code: tea.KeyF1})
 
 	if quit {
 		t.Fatal("quit = true, want false")
@@ -34,9 +37,42 @@ func TestEditorSpaceFlowsRunes(t *testing.T) {
 		height: 24,
 	}
 
-	m2, _, _ := m.updateKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
+	m2, _, _ := m.updateKey(tea.KeyPressMsg{Text: " "})
 
 	if got := m2.editor.ed.Lines()[0]; got != "a " {
 		t.Fatalf("editor.ed.Lines()[0] = %q, want %q", got, "a ")
+	}
+}
+
+func TestAutoThemeBackground(t *testing.T) {
+	dark, _ := themefile.Builtin("dark")
+	light, _ := themefile.Builtin("light")
+	t.Cleanup(func() { theme.Use(dark) })
+	theme.Use(light)
+	lightBanner := theme.BannerAcc.Render("banner")
+	theme.Use(dark)
+	darkBanner := theme.BannerAcc.Render("banner")
+	if darkBanner == lightBanner {
+		t.Fatal("test requires distinct banner styles")
+	}
+	auto := Model{}.WithAutoTheme(true)
+	if auto.Init() == nil {
+		t.Fatal("missing background request")
+	}
+	auto.Update(tea.BackgroundColorMsg{Color: color.White})
+	if theme.BannerAcc.Render("banner") != lightBanner {
+		t.Fatal("white background did not select light theme")
+	}
+	auto.Update(tea.BackgroundColorMsg{Color: color.Black})
+	if theme.BannerAcc.Render("banner") != darkBanner {
+		t.Fatal("black background did not select dark theme")
+	}
+	fixed := Model{}
+	if fixed.Init() != nil {
+		t.Fatal("fixed theme queried background")
+	}
+	fixed.Update(tea.BackgroundColorMsg{Color: color.White})
+	if theme.BannerAcc.Render("banner") != darkBanner {
+		t.Fatal("fixed palette changed")
 	}
 }

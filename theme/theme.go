@@ -10,7 +10,7 @@
 package theme
 
 import (
-	lipgloss "github.com/charmbracelet/lipgloss"
+	lipgloss "charm.land/lipgloss/v2"
 
 	"github.com/Unisay/Nook/markdown"
 	"github.com/Unisay/Nook/themefile"
@@ -57,15 +57,12 @@ func init() {
 	Use(t)
 }
 
-// Resolve finds the theme called name: "dark", "light", "auto" (dark or light
-// according to the terminal's background), or a custom theme file; dir is the
+// Resolve finds the theme called name: "dark", "light", "auto" (
+// dark until the host receives the terminal background), or a custom theme file; dir is the
 // configuration directory. See themefile.Load for the file lookup.
 func Resolve(name, dir string) (themefile.Theme, error) {
 	if name == "auto" {
-		name = "light"
-		if lipgloss.HasDarkBackground() {
-			name = "dark"
-		}
+		name = "dark"
 	}
 	return themefile.Load(name, dir)
 }

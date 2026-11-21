@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	ansi "github.com/charmbracelet/x/ansi"
 
 	"github.com/Unisay/Nook/theme"
@@ -166,7 +166,7 @@ func (e *Editor) takeCount() (count, n int) {
 // --- Keys ---
 
 // vimUpdate handles a key in vim mode and records the change in the history.
-func (e Editor) vimUpdate(key tea.KeyMsg) Editor {
+func (e Editor) vimUpdate(key tea.KeyPressMsg) Editor {
 	e.unfreeze()
 	e.vimMsg = ""
 	s := key.String()
@@ -188,11 +188,7 @@ func (e Editor) vimUpdate(key tea.KeyMsg) Editor {
 	}
 
 	before := e.snapshot()
-	if key.Paste {
-		e = e.vimPaste(key)
-	} else {
-		e = e.vimKey(key)
-	}
+	e = e.vimKey(key)
 	kind := ""
 	switch e.vimMode {
 	case vimNormal:
@@ -205,7 +201,7 @@ func (e Editor) vimUpdate(key tea.KeyMsg) Editor {
 
 // vimInsertKey handles a key of INSERT mode: esc goes back to NORMAL mode,
 // every other key edits as it does without vim mode.
-func (e Editor) vimInsertKey(key tea.KeyMsg) Editor {
+func (e Editor) vimInsertKey(key tea.KeyPressMsg) Editor {
 	if key.String() == "esc" {
 		e.vimMode = vimNormal
 		e.clearSelection()
@@ -241,15 +237,40 @@ func (e Editor) vimHistory(undo bool) Editor {
 	return e
 }
 
-// vimPaste inserts text pasted from the terminal at the cursor, replacing a
-// VISUAL selection: a paste is text, never a sequence of commands.
-func (e Editor) vimPaste(key tea.KeyMsg) Editor {
+// pasteText inserts clipboard contents literally in the active editing mode.
+func (e Editor) pasteText(text string) Editor {
+	if e.reading {
+		return e
+	}
+	e.unfreeze()
+	if e.vimCmdOn {
+		for _, r := range text {
+			if r >= ' ' {
+				e.vimCmd += string(r)
+			}
+		}
+		return e
+	}
+	before := e.snapshot()
+	if e.vim && e.vimMode != vimInsert {
+		e = e.vimPaste(text)
+		e.normalClamp()
+		return e.commit(before, "")
+	}
+	e = e.insertText(text)
+	if e.vim {
+		return e.commit(before, vimInsertEdit)
+	}
+	return e.commit(before, "type")
+}
+
+func (e Editor) vimPaste(text string) Editor {
 	e.vimPending, e.vimCount, e.vimPreCount = "", 0, 0
 	if e.inVisual() {
 		sl, sc, el, ec, _ := e.leaveVisual()
 		e.takeRange(sl, sc, el, ec, true)
 	}
-	e = e.insertKeyText(key)
+	e = e.insertText(text)
 	if e.cursorCol > 0 {
 		e.cursorCol--
 	}
@@ -257,8 +278,8 @@ func (e Editor) vimPaste(key tea.KeyMsg) Editor {
 }
 
 // vimKey handles a key in NORMAL, VISUAL and V-LINE mode.
-func (e Editor) vimKey(key tea.KeyMsg) Editor {
-	if key.Alt {
+func (e Editor) vimKey(key tea.KeyPressMsg) Editor {
+	if key.Mod&tea.ModAlt != 0 {
 		return e
 	}
 	s := key.String()
@@ -267,8 +288,8 @@ func (e Editor) vimKey(key tea.KeyMsg) Editor {
 	if e.vimPending == "r" {
 		e.vimPending = ""
 		_, n := e.takeCount()
-		if len(key.Runes) == 1 && key.Runes[0] >= ' ' {
-			e.vimReplace(key.Runes[0], n)
+		if len([]rune(key.Text)) == 1 && []rune(key.Text)[0] >= ' ' {
+			e.vimReplace([]rune(key.Text)[0], n)
 		}
 		return e
 	}
@@ -457,7 +478,7 @@ func (e Editor) vimVisualKey(s string) Editor {
 }
 
 // vimCmdKey handles a key of the ":" command line.
-func (e Editor) vimCmdKey(key tea.KeyMsg) Editor {
+func (e Editor) vimCmdKey(key tea.KeyPressMsg) Editor {
 	switch key.String() {
 	case "esc":
 		e.vimCmdOn, e.vimCmd = false, ""
@@ -473,8 +494,8 @@ func (e Editor) vimCmdKey(key tea.KeyMsg) Editor {
 			e.vimCmd = string(r[:len(r)-1])
 		}
 	default:
-		if !key.Alt {
-			for _, r := range key.Runes {
+		if key.Mod&tea.ModAlt == 0 {
+			for _, r := range key.Text {
 				if r >= ' ' {
 					e.vimCmd += string(r)
 				}

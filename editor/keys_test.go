@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // press delivers the KeyMsgs to the editor one after the other, each to the result
 // of the previous one, and returns the final Editor.
-func press(e Editor, msgs ...tea.KeyMsg) Editor {
+func press(e Editor, msgs ...tea.Msg) Editor {
 	for _, m := range msgs {
 		out, _ := e.Update(m)
 		next, ok := out.(Editor)
@@ -26,7 +26,7 @@ func press(e Editor, msgs ...tea.KeyMsg) Editor {
 func TestSpaceKeyInserts(t *testing.T) {
 	e := New([]string{"a"}, 10, 5)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeySpace, Runes: []rune(" ")})
+	e = press(e, tea.KeyPressMsg{Text: " "})
 
 	if got := e.Lines()[0]; got != "a " {
 		t.Fatalf("Lines()[0] = %q, want %q", got, "a ")
@@ -38,7 +38,7 @@ func TestSpaceKeyInserts(t *testing.T) {
 func TestPasteKeepsAllRunes(t *testing.T) {
 	e := New([]string{""}, 10, 5)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("ab cd"), Paste: true})
+	e = press(e, tea.PasteMsg{Content: "ab cd"})
 
 	if got := e.Lines()[0]; got != "ab cd" {
 		t.Fatalf("Lines()[0] = %q, want %q", got, "ab cd")
@@ -50,7 +50,7 @@ func TestPasteKeepsAllRunes(t *testing.T) {
 func TestPasteMultilineSplits(t *testing.T) {
 	e := New([]string{""}, 10, 5)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a\nb"), Paste: true})
+	e = press(e, tea.PasteMsg{Content: "a\nb"})
 
 	got := e.Lines()
 	want := []string{"a", "b"}
@@ -69,12 +69,12 @@ func TestPasteMultilineSplits(t *testing.T) {
 func TestHomeEnd(t *testing.T) {
 	e := New([]string{"abc"}, 10, 5)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyHome})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyHome})
 	if got := e.CursorCol1(); got != 1 {
 		t.Fatalf("CursorCol1() after home = %d, want 1", got)
 	}
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyEnd})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyEnd})
 	if got := e.CursorCol1(); got != 4 {
 		t.Fatalf("CursorCol1() after end = %d, want 4", got)
 	}
@@ -85,12 +85,12 @@ func TestHomeEnd(t *testing.T) {
 func TestCtrlUpDownDoc(t *testing.T) {
 	e := New([]string{"a", "b", "c"}, 10, 5)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyCtrlUp})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyUp, Mod: tea.ModCtrl})
 	if got := e.CursorRow(); got != 1 {
 		t.Fatalf("CursorRow() after ctrl+up = %d, want 1", got)
 	}
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyCtrlDown})
+	e = press(e, tea.KeyPressMsg{Code: tea.KeyDown, Mod: tea.ModCtrl})
 	if got := e.CursorRow(); got != 3 {
 		t.Fatalf("CursorRow() after ctrl+down = %d, want 3", got)
 	}
@@ -101,7 +101,7 @@ func TestCtrlUpDownDoc(t *testing.T) {
 func TestCtrlTWantsPalette(t *testing.T) {
 	e := New([]string{"a"}, 10, 5)
 
-	e = press(e, tea.KeyMsg{Type: tea.KeyCtrlT})
+	e = press(e, tea.KeyPressMsg{Code: 't', Mod: tea.ModCtrl})
 
 	if !e.WantsPalette {
 		t.Fatal("WantsPalette = false, want true")
@@ -123,7 +123,7 @@ func TestApplyFormatLetter(t *testing.T) {
 
 // TestCtrlQWantsExit checks that ctrl+q asks to exit.
 func TestCtrlQWantsExit(t *testing.T) {
-	e := press(New([]string{"a"}, 10, 5), tea.KeyMsg{Type: tea.KeyCtrlQ})
+	e := press(New([]string{"a"}, 10, 5), tea.KeyPressMsg{Code: 'q', Mod: tea.ModCtrl})
 
 	if !e.WantsExit {
 		t.Fatal("WantsExit = false, want true")
@@ -132,7 +132,7 @@ func TestCtrlQWantsExit(t *testing.T) {
 
 // TestCtrlSWantsSave checks that ctrl+s asks to save.
 func TestCtrlSWantsSave(t *testing.T) {
-	e := press(New([]string{"a"}, 10, 5), tea.KeyMsg{Type: tea.KeyCtrlS})
+	e := press(New([]string{"a"}, 10, 5), tea.KeyPressMsg{Code: 's', Mod: tea.ModCtrl})
 
 	if !e.WantsSave {
 		t.Fatal("WantsSave = false, want true")
@@ -149,17 +149,17 @@ func TestWordMovement(t *testing.T) {
 	t.Run("ctrl+left goes to the start of the current or previous word", func(t *testing.T) {
 		e := New([]string{"foo bar baz"}, 20, 5)
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlLeft})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyLeft, Mod: tea.ModCtrl})
 		if got := e.CursorCol1(); got != 9 {
 			t.Fatalf("after ctrl+left CursorCol1() = %d, want 9 (start of %q)", got, "baz")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlLeft})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyLeft, Mod: tea.ModCtrl})
 		if got := e.CursorCol1(); got != 5 {
 			t.Fatalf("after the second ctrl+left CursorCol1() = %d, want 5 (start of %q)", got, "bar")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlLeft})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyLeft, Mod: tea.ModCtrl})
 		if got := e.CursorCol1(); got != 1 {
 			t.Fatalf("after the third ctrl+left CursorCol1() = %d, want 1 (start of %q)", got, "foo")
 		}
@@ -172,7 +172,7 @@ func TestWordMovement(t *testing.T) {
 	})
 
 	t.Run("alt+left behaves like ctrl+left", func(t *testing.T) {
-		e := press(New([]string{"foo bar baz"}, 20, 5), tea.KeyMsg{Type: tea.KeyLeft, Alt: true})
+		e := press(New([]string{"foo bar baz"}, 20, 5), tea.KeyPressMsg{Code: tea.KeyLeft, Mod: tea.ModAlt})
 
 		if got := e.CursorCol1(); got != 9 {
 			t.Fatalf("after alt+left CursorCol1() = %d, want 9 (start of %q)", got, "baz")
@@ -180,19 +180,19 @@ func TestWordMovement(t *testing.T) {
 	})
 
 	t.Run("ctrl+right goes to the end of the current or next word", func(t *testing.T) {
-		e := press(New([]string{"foo bar baz"}, 20, 5), tea.KeyMsg{Type: tea.KeyHome})
+		e := press(New([]string{"foo bar baz"}, 20, 5), tea.KeyPressMsg{Code: tea.KeyHome})
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlRight})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModCtrl})
 		if got := e.CursorCol1(); got != 4 {
 			t.Fatalf("after the first ctrl+right CursorCol1() = %d, want 4 (end of %q)", got, "foo")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlRight})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModCtrl})
 		if got := e.CursorCol1(); got != 8 {
 			t.Fatalf("after the second ctrl+right CursorCol1() = %d, want 8 (end of %q)", got, "bar")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlRight})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModCtrl})
 		if got := e.CursorCol1(); got != 12 {
 			t.Fatalf("after the third ctrl+right CursorCol1() = %d, want 12 (end of line)", got)
 		}
@@ -203,8 +203,8 @@ func TestWordMovement(t *testing.T) {
 
 	t.Run("alt+right behaves like ctrl+right", func(t *testing.T) {
 		e := press(New([]string{"foo bar baz"}, 20, 5),
-			tea.KeyMsg{Type: tea.KeyHome},
-			tea.KeyMsg{Type: tea.KeyRight, Alt: true},
+			tea.KeyPressMsg{Code: tea.KeyHome},
+			tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModAlt},
 		)
 
 		if got := e.CursorCol1(); got != 4 {
@@ -216,7 +216,7 @@ func TestWordMovement(t *testing.T) {
 		// The cursor starts at the end of the first line ("foo", column 3).
 		e := New([]string{"foo", "bar"}, 20, 5)
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlRight})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyRight, Mod: tea.ModCtrl})
 		if got := e.CursorRow(); got != 1 {
 			t.Fatalf("after ctrl+right CursorRow() = %d, want 1 (no crossing of lines)", got)
 		}
@@ -224,7 +224,7 @@ func TestWordMovement(t *testing.T) {
 			t.Fatalf("after ctrl+right CursorCol1() = %d, want 4", got)
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlLeft})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyLeft, Mod: tea.ModCtrl})
 		if got := e.CursorRow(); got != 1 {
 			t.Fatalf("after ctrl+left CursorRow() = %d, want 1", got)
 		}
@@ -236,7 +236,7 @@ func TestWordMovement(t *testing.T) {
 	t.Run("alt+backspace deletes up to the start of the word", func(t *testing.T) {
 		e := New([]string{"foo bar baz"}, 20, 5) // cursor at the end of the line, column 11
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyBackspace, Alt: true})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyBackspace, Mod: tea.ModAlt})
 		if got := e.Lines()[0]; got != "foo bar " {
 			t.Fatalf("Lines()[0] after alt+backspace = %q, want %q", got, "foo bar ")
 		}
@@ -247,7 +247,7 @@ func TestWordMovement(t *testing.T) {
 			t.Fatal("Dirty = false after alt+backspace, want true")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyBackspace, Alt: true})
+		e = press(e, tea.KeyPressMsg{Code: tea.KeyBackspace, Mod: tea.ModAlt})
 		if got := e.Lines()[0]; got != "foo " {
 			t.Fatalf("Lines()[0] after the second alt+backspace = %q, want %q", got, "foo ")
 		}
@@ -259,7 +259,7 @@ func TestWordMovement(t *testing.T) {
 	t.Run("ctrl+u deletes from the cursor to the start of the line", func(t *testing.T) {
 		e := New([]string{"foo bar"}, 20, 5) // cursor at the end of the line, column 7
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlU})
+		e = press(e, tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})
 		if got := e.Lines()[0]; got != "" {
 			t.Fatalf("Lines()[0] after ctrl+u = %q, want %q (the line becomes empty)", got, "")
 		}
@@ -274,16 +274,16 @@ func TestWordMovement(t *testing.T) {
 	t.Run("ctrl+k deletes from the cursor to the end of the line", func(t *testing.T) {
 		e := New([]string{"foo bar"}, 20, 5)
 		e = press(e,
-			tea.KeyMsg{Type: tea.KeyHome},
-			tea.KeyMsg{Type: tea.KeyRight},
-			tea.KeyMsg{Type: tea.KeyRight},
-			tea.KeyMsg{Type: tea.KeyRight},
+			tea.KeyPressMsg{Code: tea.KeyHome},
+			tea.KeyPressMsg{Code: tea.KeyRight},
+			tea.KeyPressMsg{Code: tea.KeyRight},
+			tea.KeyPressMsg{Code: tea.KeyRight},
 		)
 		if got := e.CursorCol1(); got != 4 {
 			t.Fatalf("CursorCol1() before ctrl+k = %d, want 4", got)
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyCtrlK})
+		e = press(e, tea.KeyPressMsg{Code: 'k', Mod: tea.ModCtrl})
 		if got := e.Lines()[0]; got != "foo" {
 			t.Fatalf("Lines()[0] after ctrl+k = %q, want %q", got, "foo")
 		}
@@ -313,7 +313,7 @@ func TestWordMovement(t *testing.T) {
 			t.Fatalf("cursorCol = %d, want 8 (start of %q)", got, "baz")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+		e = press(e, tea.KeyPressMsg{Text: "x"})
 		if got := e.Lines()[0]; got != "foo bar x" {
 			t.Fatalf("Lines()[0] = %q, want %q (the selection was %q)", got, "foo bar x", "baz")
 		}
@@ -330,7 +330,7 @@ func TestWordMovement(t *testing.T) {
 			t.Fatalf("cursorCol = %d, want 7 (end of %q)", got, "bar")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+		e = press(e, tea.KeyPressMsg{Text: "x"})
 		if got := e.Lines()[0]; got != "foo x baz" {
 			t.Fatalf("Lines()[0] = %q, want %q (the selection was %q)", got, "foo x baz", "bar")
 		}
@@ -353,7 +353,7 @@ func TestWordMovement(t *testing.T) {
 			t.Fatalf("cursorCol = %d, want 7 (end of %q)", got, "bar")
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+		e = press(e, tea.KeyPressMsg{Text: "x"})
 		if got := e.Lines()[0]; got != "foo x baz" {
 			t.Fatalf("Lines()[0] = %q, want %q (the selection was %q)", got, "foo x baz", "bar")
 		}
@@ -397,7 +397,7 @@ func TestWordMovement(t *testing.T) {
 			t.Fatalf("cursorCol = %d, want 10 (end of line)", got)
 		}
 
-		e = press(e, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+		e = press(e, tea.KeyPressMsg{Text: "x"})
 		if got := e.Lines()[0]; got != "x" {
 			t.Fatalf("Lines()[0] = %q, want %q (the whole line was selected)", got, "x")
 		}
